@@ -50,18 +50,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 background: '#ffffff'
             });
             
-            // Show print area before printing
-            printArea.style.display = 'block';
+            // Remove any logo elements completely for printing
+            const printLogo = document.querySelector('.print-logo');
+            if (printLogo) {
+                printLogo.style.display = 'none';
+                printLogo.style.visibility = 'hidden';
+                printLogo.style.width = '0';
+                printLogo.style.height = '0';
+                printLogo.style.margin = '0';
+                printLogo.style.padding = '0';
+            }
             
-            // Print directly
+            // Ensure print area is displayed for preview and printing
+            printArea.style.display = 'block';
+            // Apply additional styles to make sure content is visible and centered in preview
+            printArea.style.position = 'absolute';
+            printArea.style.left = '50%';
+            printArea.style.transform = 'translateX(-50%)';
+            printArea.style.top = '20px';
+            printArea.style.width = '57mm';
+            printArea.style.backgroundColor = 'white';
+            printArea.style.zIndex = '9999';
+            printArea.style.padding = '10px';
+            printArea.style.border = '1px solid #eee';
+            
+            // Wait a bit longer to ensure content is fully rendered
             setTimeout(function() {
                 window.print();
                 
                 // Hide print area after printing
                 setTimeout(function() {
+                    // Reset styles
                     printArea.style.display = 'none';
+                    printArea.style.position = '';
+                    printArea.style.zIndex = '';
                 }, 1000);
-            }, 300);
+            }, 500); // Increased timeout for better rendering
+            
+            // 2025-07-20T20:06:14+05:00: Modified to ensure content is visible in print preview
             
         } catch (error) {
             console.error('Error generating barcodes:', error);

@@ -24,8 +24,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Create a print window with all styles inline - maximized
-            const printWindow = window.open('', '_blank', 'width='+screen.availWidth+',height='+screen.availHeight+',top=0,left=0,fullscreen=yes,menubar=yes,toolbar=yes,resizable=yes,scrollbars=yes,status=yes');
+            // Create a print window with minimal configuration to avoid browser restrictions
+            const printWindow = window.open('', '_blank', 'width=400,height=600');
             
             // Create print content with barcodes inline
             printWindow.document.write(`
