@@ -2,7 +2,43 @@
 // Created: 2025-07-20T21:49:00+05:00
 // Description: Generates static barcode image and prepares a print-ready page
 
+// Function to fetch and display next queue number
+async function fetchNextQueueNumber() {
+    try {
+        // Use base URL of the current page to handle both local and deployed environments
+        const baseUrl = window.location.protocol === 'file:' 
+            ? 'http://localhost:3001' // Use localhost when on file:// protocol
+            : ''; // Use relative URL when on http:// or https:// (for Vercel)
+        
+        const response = await fetch(`${baseUrl}/api/counter/next`);
+        
+        if (!response.ok) {
+            throw new Error('Server error: ' + response.status);
+        }
+        
+        const data = await response.json();
+        const nextQueueElement = document.getElementById('next-queue-number');
+        
+        if (nextQueueElement) {
+            nextQueueElement.textContent = data.nextCounter || '1';
+        }
+    } catch (error) {
+        console.error('Next queue API error:', error);
+        // Show fallback value if API fails
+        const nextQueueElement = document.getElementById('next-queue-number');
+        if (nextQueueElement) {
+            nextQueueElement.textContent = '1';
+        }
+    }
+}
+
+// Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
+    // Fetch the next queue number
+    fetchNextQueueNumber();
+    
+    // Refresh the queue number every 30 seconds
+    setInterval(fetchNextQueueNumber, 30000);
     // Get DOM elements
     const printBtn = document.getElementById('printBtn');
     const iqamaInput = document.getElementById('iqama');
@@ -44,6 +80,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listener to the print button
     printBtn.addEventListener('click', handlePrint);
     
+    // Add event listeners to input fields to update queue number on change
+    iqamaInput.addEventListener('change', fetchNextQueueNumber);
+    prescriptionInput.addEventListener('change', fetchNextQueueNumber);
+    
+    // Print window close handler
+    function handlePrintWindowClose() {
+        printWindow = null;
+        console.log('Print window closed');
+        
+        // Clear the form fields when print window closes
+        document.getElementById('iqama').value = '';
+        document.getElementById('prescription').value = '';
+        
+        // Refresh the queue number
+        fetchNextQueueNumber();
+    }
+    
     // Handle print functionality
     function handlePrint() {
         try {
@@ -76,7 +129,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Call server to increment counter
     async function incrementCounter(iqamaId, prescriptionNumber, deviceId) {
         try {
-            const response = await fetch('/api/counter/increment', {
+            // Use base URL of the current page to handle both local and deployed environments
+            const baseUrl = window.location.protocol === 'file:' 
+                ? 'http://localhost:3001' // Use localhost when on file:// protocol
+                : ''; // Use relative URL when on http:// or https:// (for Vercel)
+                
+            const response = await fetch(`${baseUrl}/api/counter/increment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -101,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let localCounter = parseInt(localStorage.getItem(key) || '0');
             localCounter += 1;
             localStorage.setItem(key, localCounter.toString());
-            
+            console.log('Using local counter:', localCounter);
             return { counter: localCounter, error: error.message };
         }
     }
@@ -210,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <body>
                     <!-- Counter display at the top -->
                     <div class="counter-section">
-                        <div class="counter-label">Print #:</div>
+                        <div class="counter-label">Queue Number:</div>
                         <div class="counter-value">${counterValue || '1'}</div>
                     </div>
                     
