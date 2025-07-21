@@ -87,7 +87,79 @@
       "date": "2025-07-21",
       "deviceId": "device_5dc8312b",
       "timestamp": "2025-07-21T16:31:02.170Z"
+    },
+    "234234234_23432432432_2025-07-21_device_5dc8312b": {
+      "counter": 12,
+      "iqamaId": "234234234",
+      "prescriptionNumber": "23432432432",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T16:59:46.820Z"
+    },
+    "2342342341_23432432432_2025-07-21_device_5dc8312b": {
+      "counter": 13,
+      "iqamaId": "2342342341",
+      "prescriptionNumber": "23432432432",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T16:59:55.399Z"
+    },
+    "234234243_2342342344_2025-07-21_device_5dc8312b": {
+      "counter": 14,
+      "iqamaId": "234234243",
+      "prescriptionNumber": "2342342344",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T17:26:22.411Z"
+    },
+    "54345345345_35435345435_2025-07-21_device_5dc8312b": {
+      "counter": 15,
+      "iqamaId": "54345345345",
+      "prescriptionNumber": "35435345435",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T17:26:37.417Z"
+    },
+    "45353553534_3534543545_2025-07-21_device_5dc8312b": {
+      "counter": 16,
+      "iqamaId": "45353553534",
+      "prescriptionNumber": "3534543545",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T17:39:53.977Z"
+    },
+    "45353553534_35345435451_2025-07-21_device_5dc8312b": {
+      "counter": 17,
+      "iqamaId": "45353553534",
+      "prescriptionNumber": "35345435451",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T17:40:08.006Z"
+    },
+    "32432224_423242432_2025-07-21_device_5dc8312b": {
+      "counter": 18,
+      "iqamaId": "32432224",
+      "prescriptionNumber": "423242432",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T17:50:50.451Z"
+    },
+    "324322241_423242432_2025-07-21_device_5dc8312b": {
+      "counter": 19,
+      "iqamaId": "324322241",
+      "prescriptionNumber": "423242432",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T17:51:01.064Z"
+    },
+    "432234234234_2342342423243_2025-07-21_device_5dc8312b": {
+      "counter": 20,
+      "iqamaId": "432234234234",
+      "prescriptionNumber": "2342342423243",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T18:00:39.422Z"
     }
   },
-  "lastUpdated": "2025-07-21T16:31:02.170Z"
+  "lastUpdated": "2025-07-21T18:00:39.422Z"
 }

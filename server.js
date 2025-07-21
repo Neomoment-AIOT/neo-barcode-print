@@ -87,7 +87,7 @@ app.get('/api/counter/next', (req, res) => {
 // API endpoint to increment counter
 app.post('/api/counter/increment', (req, res) => {
     try {
-        const { iqamaId, prescriptionNumber, deviceId } = req.body;
+        const { iqamaId, prescriptionNumber, deviceId, checkOnly } = req.body;
         
         if (!iqamaId || !prescriptionNumber) {
             return res.status(400).json({ error: 'Missing required parameters' });
@@ -139,6 +139,16 @@ app.post('/api/counter/increment', (req, res) => {
         // Store with the device ID included in the key for tracking
         const storageKey = `${uniqueKey}_${deviceId || 'unknown'}`;
         
+        // If checkOnly is true, don't actually save anything, just return what the value would be
+        if (checkOnly) {
+            res.json({ 
+                counter: counterValue,
+                uniqueKey: storageKey,
+                checkOnly: true
+            });
+            return;
+        }
+        
         // Set the counter value
         counterData.counters[storageKey] = {
             counter: counterValue,
@@ -157,7 +167,7 @@ app.post('/api/counter/increment', (req, res) => {
         
         // Return the counter value for this combination
         res.json({ 
-            counter: counterData.counters[storageKey].counter,
+            counter: counterValue,
             uniqueKey: storageKey
         });
     } catch (error) {

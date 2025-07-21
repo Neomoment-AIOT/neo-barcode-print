@@ -48,6 +48,13 @@ body {
 
 #next-queue-number {
     color: #198754;
+}
+
+.timestamp {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+    font-style: italic;
     font-size: 18px;
 }
 
@@ -76,9 +83,14 @@ input[type="text"] {
     font-size: 16px;
 }
 
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
 button {
-    display: block;
-    width: 100%;
+    flex: 1;
     padding: 12px;
     background-color: #4CAF50;
     color: white;
@@ -86,8 +98,11 @@ button {
     border-radius: 4px;
     font-size: 16px;
     cursor: pointer;
-    margin-top: 20px;
     transition: background-color 0.3s;
+}
+
+.clear-button {
+    background-color: #6c757d;
 }
 
 button:hover {

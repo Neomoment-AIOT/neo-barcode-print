@@ -9,8 +9,9 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="./images/logo.jpg" alt="Logo" class="logo">
+            <img src="logo.jpg" alt="Logo" class="logo">
             <h1>Barcode Printer</h1>
+            <small id="build-timestamp" class="timestamp">Build: 2025-07-21 21:51</small>
         </div>
         <div class="next-counter">
             <span>Next Queue Number: </span>
@@ -24,7 +25,10 @@
             <label for="prescription">Prescription #:</label>
             <input type="text" id="prescription" placeholder="Enter Prescription #" required>
         </div>
-        <button id="printBtn">Print Barcode</button>
+        <div class="button-group">
+            <button id="printBtn">Print Barcode</button>
+            <button id="clearBtn" class="clear-button">Clear</button>
+        </div>
         <!-- Hidden barcode containers for printing -->
         <div id="printArea" style="display: none;">
             <div class="print-logo">

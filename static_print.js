@@ -2,33 +2,83 @@
 // Created: 2025-07-20T21:49:00+05:00
 // Description: Generates static barcode image and prepares a print-ready page
 
+// Track the highest queue number we've seen
+// Initialize from localStorage if available
+let highestQueueNumber = parseInt(localStorage.getItem('highestQueueNumber') || '0');
+
+// Function to update highest queue number
+function updateHighestQueueNumber(newValue) {
+    if (newValue && parseInt(newValue) > highestQueueNumber) {
+        highestQueueNumber = parseInt(newValue);
+        // Store in localStorage for persistence
+        localStorage.setItem('highestQueueNumber', highestQueueNumber);
+    }
+    // Always update the UI
+    const nextQueueElement = document.getElementById('next-queue-number');
+    if (nextQueueElement) {
+        nextQueueElement.textContent = highestQueueNumber || '1';
+    }
+}
+
 // Function to fetch and display next queue number
 async function fetchNextQueueNumber() {
     try {
+        // Get current input values
+        const iqamaValue = document.getElementById('iqama').value.trim();
+        const prescriptionValue = document.getElementById('prescription').value.trim();
+        
         // Use base URL of the current page to handle both local and deployed environments
         const baseUrl = window.location.protocol === 'file:' 
-            ? 'http://localhost:3001' // Use localhost when on file:// protocol
+            ? 'http://localhost:3000' // Use localhost when on file:// protocol
             : ''; // Use relative URL when on http:// or https:// (for Vercel)
         
-        const response = await fetch(`${baseUrl}/api/counter/next`);
-        
-        if (!response.ok) {
-            throw new Error('Server error: ' + response.status);
-        }
-        
-        const data = await response.json();
-        const nextQueueElement = document.getElementById('next-queue-number');
-        
-        if (nextQueueElement) {
-            nextQueueElement.textContent = data.nextCounter || '1';
+        // If we have both values, check if this combination already exists
+        if (iqamaValue && prescriptionValue) {
+            // Use the increment endpoint with checkOnly=true to see what number would be assigned
+            const response = await fetch(`${baseUrl}/api/counter/increment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    iqamaId: iqamaValue,
+                    prescriptionNumber: prescriptionValue,
+                    deviceId: deviceId,
+                    checkOnly: true // Don't actually increment, just check
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Server error: ' + response.status);
+            }
+            
+            const data = await response.json();
+            const nextQueueElement = document.getElementById('next-queue-number');
+            
+            // Update the highest queue number
+            if (data.counter) {
+                updateHighestQueueNumber(data.counter);
+            }
+        } else {
+            // If we don't have both values, fall back to generic next number
+            const response = await fetch(`${baseUrl}/api/counter/next`);
+            
+            if (!response.ok) {
+                throw new Error('Server error: ' + response.status);
+            }
+            
+            const data = await response.json();
+            const nextQueueElement = document.getElementById('next-queue-number');
+            
+            // Update highest counter if needed
+            if (data.nextCounter) {
+                updateHighestQueueNumber(data.nextCounter);
+            }
         }
     } catch (error) {
         console.error('Next queue API error:', error);
-        // Show fallback value if API fails
-        const nextQueueElement = document.getElementById('next-queue-number');
-        if (nextQueueElement) {
-            nextQueueElement.textContent = '1';
-        }
+        // Still show the highest queue number we've seen, even on API failure
+        updateHighestQueueNumber(highestQueueNumber); // This ensures the display shows current highest
     }
 }
 
@@ -39,10 +89,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Refresh the queue number every 30 seconds
     setInterval(fetchNextQueueNumber, 30000);
+    
     // Get DOM elements
     const printBtn = document.getElementById('printBtn');
     const iqamaInput = document.getElementById('iqama');
     const prescriptionInput = document.getElementById('prescription');
+    const clearBtn = document.getElementById('clearBtn');
+    
+    // Auto-clear timer
+    let autoClearTimer = null;
     
     // Initialize device ID (could be enhanced for better device identification)
     const deviceId = generateDeviceId();
@@ -77,8 +132,24 @@ document.addEventListener('DOMContentLoaded', function() {
         return deviceIdValue;
     }
     
-    // Add event listener to the print button
+    // Function to clear form fields
+    function clearFields() {
+        iqamaInput.value = '';
+        prescriptionInput.value = '';
+        // Focus on the first field
+        iqamaInput.focus();
+        // Clear any existing auto-clear timer
+        if (autoClearTimer) {
+            clearTimeout(autoClearTimer);
+            autoClearTimer = null;
+        }
+    }
+    
+    // Set up event listener for the print button
     printBtn.addEventListener('click', handlePrint);
+    
+    // Set up event listener for the clear button
+    clearBtn.addEventListener('click', clearFields);
     
     // Add event listeners to input fields to update queue number on change
     iqamaInput.addEventListener('change', fetchNextQueueNumber);
@@ -112,8 +183,21 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get counter value from server
             incrementCounter(iqamaValue, prescriptionValue, deviceId)
                 .then(counterData => {
+                    // Update the highest queue number
+                    if (counterData.counter) {
+                        updateHighestQueueNumber(counterData.counter);
+                    }
                     // Continue with print process using the counter
                     generatePrintWindow(iqamaValue, prescriptionValue, counterData.counter);
+                    
+                    // Set auto-clear timer for 20 seconds after printing
+                    if (autoClearTimer) {
+                        clearTimeout(autoClearTimer);
+                    }
+                    autoClearTimer = setTimeout(() => {
+                        clearFields();
+                        console.log('Fields auto-cleared after 20 seconds');
+                    }, 20000); // 20 seconds
                 })
                 .catch(error => {
                     console.error('Error getting counter:', error);
@@ -131,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // Use base URL of the current page to handle both local and deployed environments
             const baseUrl = window.location.protocol === 'file:' 
-                ? 'http://localhost:3001' // Use localhost when on file:// protocol
+                ? 'http://localhost:3000' // Use localhost when on file:// protocol
                 : ''; // Use relative URL when on http:// or https:// (for Vercel)
                 
             const response = await fetch(`${baseUrl}/api/counter/increment`, {
@@ -347,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Insert counter before the closing body tag
                 printPageWithCounter = printPage.replace('</body>', `
                     <div class="counter-section">
-                        <div class="counter-label">Print #:</div>
+                        <div class="counter-label">Queue #:</div>
                         <div class="counter-value">${counterValue}</div>
                     </div>
                     <style>
