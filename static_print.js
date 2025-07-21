@@ -261,8 +261,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Generate the print window with barcodes
+    // 2025-07-22T00:49:30+05:00: Fixed barcode generation for Vercel deployment
     function generatePrintWindow(iqamaValue, prescriptionValue, counterValue) {
         try {
+            // Ensure we have valid values
+            const safeIqamaValue = iqamaValue || 'N/A';
+            const safePrescriptionValue = prescriptionValue || 'N/A';
+            const safeCounterValue = (counterValue && counterValue !== 'Error') ? counterValue : '1';
+            
             // Generate barcodes in memory first
             const tempContainer = document.createElement('div');
             tempContainer.style.position = 'absolute';
@@ -278,203 +284,302 @@ document.addEventListener('DOMContentLoaded', function() {
             tempContainer.appendChild(svgIqama);
             tempContainer.appendChild(svgPrescription);
             
-            // Generate the barcodes
-            JsBarcode("#temp-barcode-iqama", iqamaValue, {
-                format: "CODE128",
-                width: 2,
-                height: 40,
-                displayValue: true,
-                fontSize: 10,
-                margin: 5
-            });
-            
-            JsBarcode("#temp-barcode-prescription", prescriptionValue, {
-                format: "CODE128",
-                width: 2,
-                height: 40,
-                displayValue: true,
-                fontSize: 10,
-                margin: 5
-            });
-            
-            // Get the SVG strings
-            const iqamaSvgContent = tempContainer.querySelector('#temp-barcode-iqama').outerHTML;
-            const prescriptionSvgContent = tempContainer.querySelector('#temp-barcode-prescription').outerHTML;
-            
-            // Remove the temp container
-            document.body.removeChild(tempContainer);
-            
-            // Create a static HTML page with the barcodes embedded
-            const printPage = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Barcode Print</title>
-                    <style>
-                        @page {
-                            size: 57mm auto;
-                            margin: 0;
-                        }
-                        body {
-                            width: 57mm;
-                            margin: 0;
-                            padding: 0;
-                            background: white;
-                            font-family: Arial, sans-serif;
-                        }
-                        .barcode-container {
-                            width: 57mm;
-                            padding: 2mm;
-                        }
-                        .barcode-item {
-                            margin: 2mm 0;
-                            text-align: center;
-                        }
-                        .barcode-label {
-                            font-size: 10pt;
-                            font-family: Arial, sans-serif;
-                            font-weight: bold;
-                            margin-bottom: 2mm;
-                        }
-                        /* Make sure SVGs display properly */
-                        svg {
-                            width: 50mm;
-                            height: auto;
-                            display: block;
-                            margin: 0 auto;
-                        }
-                        /* Counter styling */
-                        .counter-section {
-                            margin: 0;
-                            padding: 2mm;
-                            text-align: center;
-                            border-bottom: 1px dashed #ccc;
-                        }
-                        .counter-label {
-                            font-size: 8pt;
-                            font-weight: bold;
-                            margin-bottom: 1mm;
-                        }
-                        .counter-value {
-                            font-size: 14pt;
-                            font-weight: bold;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <!-- Counter display at the top -->
-                    <div class="counter-section">
-                        <div class="counter-label">Queue Number:</div>
-                        <div class="counter-value">${counterValue || '1'}</div>
+            try {
+                // Generate the barcodes
+                JsBarcode("#temp-barcode-iqama", safeIqamaValue, {
+                    format: "CODE128",
+                    width: 2,
+                    height: 40,
+                    displayValue: true,
+                    fontSize: 10,
+                    margin: 5
+                });
+                
+                JsBarcode("#temp-barcode-prescription", safePrescriptionValue, {
+                    format: "CODE128",
+                    width: 2,
+                    height: 40,
+                    displayValue: true,
+                    fontSize: 10,
+                    margin: 5
+                });
+                
+                // Get the SVG strings
+                const iqamaSvgContent = tempContainer.querySelector('#temp-barcode-iqama').outerHTML;
+                const prescriptionSvgContent = tempContainer.querySelector('#temp-barcode-prescription').outerHTML;
+                
+                // Create pre-rendered barcode content
+                createPrintWindow(safeIqamaValue, safePrescriptionValue, safeCounterValue, iqamaSvgContent, prescriptionSvgContent);
+            } catch (barcodeError) {
+                // If JsBarcode fails, create text-only version
+                console.error('Barcode generation error:', barcodeError);
+                createTextBackupPrintWindow(safeIqamaValue, safePrescriptionValue, safeCounterValue);
+            } finally {
+                // Clean up the temp container
+                try {
+                    document.body.removeChild(tempContainer);
+                } catch (e) {
+                    console.warn('Error removing temp container:', e);
+                }
+            }
+        } catch (error) {
+            console.error('Error in print window generation:', error);
+            alert('Error generating print window. Please try again. Details: ' + error.message);
+        }
+    }
+    
+    // Helper function to create print window with pre-rendered barcode SVGs
+    function createPrintWindow(iqamaValue, prescriptionValue, counterValue, iqamaSvgContent, prescriptionSvgContent) {
+        // Create a static HTML page with the barcodes embedded
+        const printPage = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Barcode Print</title>
+                <style>
+                    @page {
+                        size: 57mm auto;
+                        margin: 0;
+                    }
+                    body {
+                        width: 57mm;
+                        margin: 0;
+                        padding: 0;
+                        background: white;
+                        font-family: Arial, sans-serif;
+                    }
+                    .barcode-container {
+                        width: 57mm;
+                        padding: 2mm;
+                    }
+                    .barcode-item {
+                        margin: 2mm 0;
+                        text-align: center;
+                    }
+                    .barcode-label {
+                        font-size: 10pt;
+                        font-family: Arial, sans-serif;
+                        font-weight: bold;
+                        margin-bottom: 2mm;
+                    }
+                    /* Make sure SVGs display properly */
+                    svg {
+                        width: 50mm;
+                        height: auto;
+                        display: block;
+                        margin: 0 auto;
+                    }
+                    /* Counter styling */
+                    .counter-section {
+                        margin: 0;
+                        padding: 2mm;
+                        text-align: center;
+                        border-bottom: 1px dashed #ccc;
+                    }
+                    .counter-label {
+                        font-size: 8pt;
+                        font-weight: bold;
+                        margin-bottom: 1mm;
+                    }
+                    .counter-value {
+                        font-size: 14pt;
+                        font-weight: bold;
+                    }
+                    .footer {
+                        margin-top: 5mm;
+                        padding-top: 2mm;
+                        border-top: 1px dashed #ccc;
+                        text-align: center;
+                        font-size: 9pt;
+                    }
+                </style>
+            </head>
+            <body>
+                <!-- Counter display at the top -->
+                <div class="counter-section">
+                    <div class="counter-label">Queue Number:</div>
+                    <div class="counter-value">${counterValue}</div>
+                </div>
+                
+                <div class="barcode-container" style="margin-top: 0;">
+                    <div class="barcode-item">
+                        <div class="barcode-label">Iqama ID</div>
+                        ${iqamaSvgContent}
                     </div>
-                    
-                    <div class="barcode-container" style="margin-top: 0;">
-                        <div class="barcode-item">
-                            <div class="barcode-label">Iqama ID</div>
-                            ${iqamaSvgContent}
-                        </div>
-                        <div class="barcode-item">
-                            <div class="barcode-label">Prescription #</div>
-                            ${prescriptionSvgContent}
-                        </div>
+                    <div class="barcode-item">
+                        <div class="barcode-label">Prescription #</div>
+                        ${prescriptionSvgContent}
                     </div>
-                    <script>
-                        // Variables to track print dialog state
-                        let printDialogClosed = false;
-                        let closeTimeout;
-                        
-                        // Auto print when the page is loaded
-                        window.onload = function() {
-                            // Display message to user
-                            const msgDiv = document.createElement('div');
-                            msgDiv.style.margin = '5mm 0';
-                            msgDiv.style.padding = '2mm';
-                            msgDiv.style.backgroundColor = '#f0f0f0';
-                            msgDiv.style.borderRadius = '2mm';
-                            msgDiv.style.textAlign = 'center';
-                            msgDiv.style.fontSize = '9pt';
-                            msgDiv.innerHTML = 'Window will close automatically after printing<br>or in 20 seconds.';
-                            document.body.appendChild(msgDiv);
-                            
-                            // Wait for rendering to complete
-                            setTimeout(function() {
-                                try {
-                                    window.print();
-                                } catch (e) {
-                                    console.error('Print error:', e);
-                                }
-                                
-                                // Start auto-close countdown after print dialog appears
-                                closeTimeout = setTimeout(function() {
-                                    try {
-                                        window.close();
-                                    } catch (e) {
-                                        console.error('Unable to close window:', e);
-                                        // Update message if window cannot be closed
-                                        msgDiv.innerHTML = 'Please close this window manually.';
-                                        msgDiv.style.backgroundColor = '#ffe0e0';
-                                    }
-                                }, 20000); // 20 seconds
-                            }, 500);
-                        };
-                        
-                        // Try to detect when print dialog closes
-                        window.addEventListener('focus', function() {
-                            // When window regains focus, print dialog might have been closed
-                            setTimeout(function() {
-                                if (!printDialogClosed) {
-                                    printDialogClosed = true;
-                                    try {
-                                        window.close();
-                                    } catch (e) {
-                                        console.error('Unable to close window after print:', e);
-                                    }
-                                }
-                            }, 1000);
-                        });
-                    </script>
-                </body>
-                </html>
-            `;
-            
-            // Add counter to the print page HTML if available
-            let printPageWithCounter = printPage;
-            if (counterValue) {
-                // Insert counter before the closing body tag
-                printPageWithCounter = printPage.replace('</body>', `
-                    <div class="counter-section">
-                        <div class="counter-label">Queue #:</div>
+                    <div class="barcode-item">
+                        <div class="barcode-label">Queue #:</div>
                         <div class="counter-value">${counterValue}</div>
                     </div>
-                    <style>
-                        .counter-section {
-                            margin-top: 5mm;
-                            padding-top: 2mm;
-                            border-top: 1px dashed #ccc;
-                            text-align: center;
-                        }
-                        .counter-label {
-                            font-size: 8pt;
-                            font-weight: bold;
-                            margin-bottom: 1mm;
-                        }
-                        .counter-value {
-                            font-size: 14pt;
-                            font-weight: bold;
-                        }
-                    </style>
-                </body>`);
-            }
-            
+                </div>
+                
+                <div class="footer">
+                    Window will close automatically after printing<br>or in 20 seconds.
+                </div>
+                
+                <script>
+                    // Auto print when the page is loaded
+                    window.onload = function() {
+                        // Wait for rendering to complete
+                        setTimeout(function() {
+                            try {
+                                window.print();
+                            } catch (e) {
+                                console.error('Print error:', e);
+                            }
+                            
+                            // Auto-close after 20 seconds
+                            setTimeout(function() {
+                                try {
+                                    window.close();
+                                } catch (e) {
+                                    console.error('Window close error:', e);
+                                }
+                            }, 20000);
+                        }, 500);
+                    };
+                    
+                    // Close window when print dialog is closed
+                    window.addEventListener('afterprint', function() {
+                        setTimeout(function() {
+                            try {
+                                window.close();
+                            } catch (e) {
+                                console.error('Window close error after print:', e);
+                            }
+                        }, 1000);
+                    });
+                </script>
+            </body>
+            </html>
+        `;
+        
+        try {
             // Open a new window with the static content
             const printWindow = window.open('', '_blank', 'width=400,height=600');
-            printWindow.document.open();
-            printWindow.document.write(printPageWithCounter);
-            printWindow.document.close();
+            if (!printWindow) {
+                alert('Pop-up blocker may be preventing the print window from opening. Please allow pop-ups for this site.');
+                return;
+            }
             
-        } catch (error) {
-            console.error('Error generating static barcodes:', error);
-            alert('Error generating barcodes. Please try again. Details: ' + error.message);
+            printWindow.document.open();
+            printWindow.document.write(printPage);
+            printWindow.document.close();
+        } catch (windowError) {
+            console.error('Error opening print window:', windowError);
+            alert('Unable to open print window. Please check pop-up settings and try again.');
+        }
+    }
+    
+    // Fallback function for text-only printing when barcode generation fails
+    function createTextBackupPrintWindow(iqamaValue, prescriptionValue, counterValue) {
+        const printPage = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Barcode Print</title>
+                <style>
+                    @page {
+                        size: 57mm auto;
+                        margin: 0;
+                    }
+                    body {
+                        width: 57mm;
+                        margin: 0;
+                        padding: 0;
+                        background: white;
+                        font-family: Arial, sans-serif;
+                    }
+                    .container {
+                        width: 57mm;
+                        padding: 5mm;
+                    }
+                    .item {
+                        margin: 4mm 0;
+                        text-align: center;
+                        border: 1px solid #000;
+                        padding: 3mm;
+                    }
+                    .label {
+                        font-size: 10pt;
+                        font-weight: bold;
+                        margin-bottom: 2mm;
+                    }
+                    .value {
+                        font-size: 14pt;
+                        font-family: monospace;
+                        letter-spacing: 1px;
+                    }
+                    .counter-section {
+                        text-align: center;
+                        border-bottom: 1px dashed #ccc;
+                        padding-bottom: 4mm;
+                        margin-bottom: 4mm;
+                    }
+                    .counter-value {
+                        font-size: 18pt;
+                        font-weight: bold;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="counter-section">
+                        <div class="label">Queue Number:</div>
+                        <div class="counter-value">${counterValue}</div>
+                    </div>
+                    
+                    <div class="item">
+                        <div class="label">Iqama ID</div>
+                        <div class="value">${iqamaValue}</div>
+                    </div>
+                    
+                    <div class="item">
+                        <div class="label">Prescription #</div>
+                        <div class="value">${prescriptionValue}</div>
+                    </div>
+                    
+                    <div class="item">
+                        <div class="label">Queue #</div>
+                        <div class="value">${counterValue}</div>
+                    </div>
+                    
+                    <div style="text-align:center; margin-top:10mm; font-size:9pt;">
+                        Text backup mode (barcode unavailable)
+                    </div>
+                </div>
+                
+                <script>
+                    // Auto print when the page is loaded
+                    window.onload = function() {
+                        setTimeout(function() {
+                            try { window.print(); } catch (e) {}
+                            setTimeout(function() {
+                                try { window.close(); } catch (e) {}
+                            }, 20000);
+                        }, 500);
+                    };
+                </script>
+            </body>
+            </html>
+        `;
+        
+        try {
+            // Open a new window with the text backup
+            const printWindow = window.open('', '_blank', 'width=400,height=600');
+            if (printWindow) {
+                printWindow.document.open();
+                printWindow.document.write(printPage);
+                printWindow.document.close();
+            } else {
+                alert('Pop-up blocker may be preventing the print window from opening. Please allow pop-ups for this site.');
+            }
+        } catch (windowError) {
+            console.error('Error opening backup print window:', windowError);
+            alert('Unable to open print window. Please check browser settings and try again.');
         }
     }
     
