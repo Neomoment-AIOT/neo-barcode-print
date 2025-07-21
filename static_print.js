@@ -47,11 +47,10 @@ async function fetchNextQueueNumber() {
             }
             
             const data = await response.json();
-            const nextQueueElement = document.getElementById('next-queue-number');
             
-            // Update the highest queue number
+            // Update queue number in UI
             if (data.counter) {
-                updateHighestQueueNumber(data.counter);
+                updateQueueNumberDisplay(data.counter);
             }
         } else {
             // If we don't have both values, fall back to generic next number
@@ -62,17 +61,16 @@ async function fetchNextQueueNumber() {
             }
             
             const data = await response.json();
-            const nextQueueElement = document.getElementById('next-queue-number');
             
-            // Update highest counter if needed
+            // Update queue number in UI
             if (data.nextCounter) {
-                updateHighestQueueNumber(data.nextCounter);
+                updateQueueNumberDisplay(data.nextCounter);
             }
         }
     } catch (error) {
         console.error('Next queue API error:', error);
-        // Still show the highest queue number we've seen, even on API failure
-        updateHighestQueueNumber(highestQueueNumber); // This ensures the display shows current highest
+        // Show an error message or default value on API failure
+        updateQueueNumberDisplay('Error');
     }
 }
 
@@ -177,9 +175,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get counter value from server
             incrementCounter(iqamaValue, prescriptionValue, deviceId)
                 .then(counterData => {
-                    // Update the highest queue number
+                    // Update queue number in UI
                     if (counterData.counter) {
-                        updateHighestQueueNumber(counterData.counter);
+                        updateQueueNumberDisplay(counterData.counter);
                     }
                     // Continue with print process using the counter
                     generatePrintWindow(iqamaValue, prescriptionValue, counterData.counter);
@@ -231,14 +229,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return await response.json();
         } catch (error) {
             console.error('Counter API error:', error);
-            // Use localStorage as fallback
-            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-            const key = `print_counter_${iqamaId}_${prescriptionNumber}_${today}`;
-            let localCounter = parseInt(localStorage.getItem(key) || '0');
-            localCounter += 1;
-            localStorage.setItem(key, localCounter.toString());
-            console.log('Using local counter:', localCounter);
-            return { counter: localCounter, error: error.message };
+            // 2025-07-21T23:59:10+05:00: Removed localStorage fallback to ensure database consistency
+            // Display an error message to the user instead
+            alert('Error connecting to the server. Please try again later.');
+            return { counter: 'Error', error: error.message };
         }
     }
     
