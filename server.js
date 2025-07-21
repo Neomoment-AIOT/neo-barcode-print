@@ -33,13 +33,21 @@ const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL
 const useDatabase = isProduction || process.env.USE_DATABASE === 'true';
 
 // Initialize the app
+// 2025-07-21T23:52:45+05:00: Removed database initialization as it's now handled by init_db.js script
 async function initApp() {
+    // Database initialization is now handled by the standalone init_db.js script
     if (useDatabase) {
+        console.log('Using PostgreSQL database for counter storage');
+        
+        // Verify database connection without initializing tables
         try {
-            await db.initDatabase();
-            console.log('Using PostgreSQL database for counter storage');
+            const client = await db.pool.connect();
+            console.log('Database connection verified successfully');
+            client.release();
         } catch (error) {
-            console.error('Failed to initialize database, falling back to JSON storage:', error);
+            console.error('Database connection error, falling back to JSON storage:', error);
+            // Fall back to JSON mode on database connection error
+            useDatabase = false;
         }
     } else {
         console.log('Using JSON file for counter storage (development mode)');

@@ -2,21 +2,15 @@
 // Created: 2025-07-20T21:49:00+05:00
 // Description: Generates static barcode image and prepares a print-ready page
 
-// Track the highest queue number we've seen
-// Initialize from localStorage if available
-let highestQueueNumber = parseInt(localStorage.getItem('highestQueueNumber') || '0');
+// 2025-07-21T23:52:50+05:00: Removed localStorage for queue number tracking
+// Now using database exclusively for queue number tracking
 
-// Function to update highest queue number
-function updateHighestQueueNumber(newValue) {
-    if (newValue && parseInt(newValue) > highestQueueNumber) {
-        highestQueueNumber = parseInt(newValue);
-        // Store in localStorage for persistence
-        localStorage.setItem('highestQueueNumber', highestQueueNumber);
-    }
-    // Always update the UI
+// Function to update queue number display in UI
+function updateQueueNumberDisplay(queueNumber) {
+    // Update the UI with the queue number from database
     const nextQueueElement = document.getElementById('next-queue-number');
     if (nextQueueElement) {
-        nextQueueElement.textContent = highestQueueNumber || '1';
+        nextQueueElement.textContent = queueNumber || 'Loading...';
     }
 }
 
