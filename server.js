@@ -5,7 +5,6 @@
 
 require('dotenv').config();
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -25,73 +24,43 @@ app.use(bodyParser.json());
 app.use(express.static(__dirname));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
-// Path to the counter storage file (fallback for local development)
-const COUNTER_FILE = path.join(__dirname, 'print_counter.json');
-
 // Environment detection
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV;
-const useDatabase = isProduction || process.env.USE_DATABASE === 'true';
+// 2025-07-22T01:05:34+05:00: Removed file fallback logic, always use database
+const useDatabase = true;
 
 // Initialize the app
 // 2025-07-21T23:52:45+05:00: Removed database initialization as it's now handled by init_db.js script
+// 2025-07-22T01:05:34+05:00: Removed JSON fallback logic, always use database
 async function initApp() {
     // Database initialization is now handled by the standalone init_db.js script
-    if (useDatabase) {
-        console.log('Using PostgreSQL database for counter storage');
-        
-        // Verify database connection without initializing tables
-        try {
-            const client = await db.pool.connect();
-            console.log('Database connection verified successfully');
-            client.release();
-        } catch (error) {
-            console.error('Database connection error, falling back to JSON storage:', error);
-            // Fall back to JSON mode on database connection error
-            useDatabase = false;
-        }
-    } else {
-        console.log('Using JSON file for counter storage (development mode)');
+    console.log('Using PostgreSQL database for counter storage');
+    
+    // Verify database connection without initializing tables
+    try {
+        const client = await db.pool.connect();
+        console.log('Database connection verified successfully');
+        client.release();
+    } catch (error) {
+        console.error('Database connection error:', error);
+        throw new Error('Database connection failed. Please check your database configuration.');
     }
 }
 
-// Initialize counter storage if it doesn't exist (JSON fallback)
-function initCounterStorage() {
-    if (!fs.existsSync(COUNTER_FILE)) {
-        const initialData = { 
-            counters: {},
-            lastUpdated: new Date().toISOString()
-        };
-        fs.writeFileSync(COUNTER_FILE, JSON.stringify(initialData, null, 2));
-    }
-}
+// 2025-07-22T01:05:34+05:00: Removed JSON file initialization function
 
 // Get counter data
+// 2025-07-22T01:05:34+05:00: Removed JSON fallback, always use database
 async function getCounterData() {
-    if (useDatabase) {
-        try {
-            return await db.getAllCounters();
-        } catch (error) {
-            console.error('Database error, falling back to JSON:', error);
-            // Fall back to JSON if database fails
-            return getJsonCounterData();
-        }
-    } else {
-        return getJsonCounterData();
+    try {
+        return await db.getAllCounters();
+    } catch (error) {
+        console.error('Database error:', error);
+        throw new Error('Failed to retrieve counter data from database');
     }
 }
 
-// Get counter data from JSON file (fallback)
-function getJsonCounterData() {
-    initCounterStorage();
-    const data = fs.readFileSync(COUNTER_FILE, 'utf8');
-    return JSON.parse(data);
-}
-
-// Save counter data
-async function saveCounterData(data) {
-    // Always update the JSON file for reference/backup
-    fs.writeFileSync(COUNTER_FILE, JSON.stringify(data, null, 2));
-}
+// 2025-07-22T01:05:34+05:00: Removed JSON file save function
 
 // API endpoint to get current counter
 app.get('/api/counter', async (req, res) => {
@@ -105,6 +74,7 @@ app.get('/api/counter', async (req, res) => {
 });
 
 // API endpoint to get next counter number without incrementing
+// 2025-07-22T01:10:55+05:00: Fixed syntax errors and simplified endpoint logic
 app.get('/api/counter/next', async (req, res) => {
     try {
         const iqamaId = req.query.iqamaId;
@@ -121,95 +91,45 @@ app.get('/api/counter/next', async (req, res) => {
         // Generate today's date in YYYY-MM-DD format
         const today = new Date().toISOString().split('T')[0];
         
-        // Get current counter data
-        const counterData = await getCounterData();
+        // Default counter value
+        let counter = 1;
         
-        // Find the highest counter value for today only
-        let todayCounter = 0;
-        Object.values(counterData.counters).forEach(item => {
-            // Only consider today's entries when determining the counter
-            if (item.date === today) {
-                todayCounter = Math.max(todayCounter, item.counter);
+        try {
+            // Check if this combination exists for today
+            const existingEntry = await db.findCounterByKeyPattern(`${iqamaId}_${prescriptionNumber}_${today}`);
+            
+            if (existingEntry) {
+                // If the combination exists, use the existing counter
+                counter = existingEntry.counter;
+            } else {
+                // If not, find the highest counter for today
+                const highestCounter = await db.getHighestCounterForDate(today);
+                counter = highestCounter > 0 ? highestCounter + 1 : 1;
             }
-        });
-        
-        // Create a unique key for this combination
-        const uniqueKey = `${iqamaId}_${prescriptionNumber}_${today}`;
-        
-        let counter = 1; // Default start counter
-        
-        if (useDatabase) {
-            try {
-                // Check if this combination exists for today
-                const existingEntry = await db.findCounterByKeyPattern(`${iqamaId}_${prescriptionNumber}_${today}`);
-                
-                if (existingEntry) {
-                    // If the combination exists, use the existing counter
-                    counter = existingEntry.counter;
-                } else {
-                    // If not, find the highest counter for today
-                    const highestCounter = await db.getHighestCounterForDate(today);
-                    counter = highestCounter > 0 ? highestCounter + 1 : 1;
-                }
-            } catch (dbError) {
-                console.error('Database error in /api/counter/next:', dbError);
-                // Fall back to JSON method if database fails
-                counter = await getNextCounterFromJson(iqamaId, prescriptionNumber, today);
-            }
-        } else {
-            // Use JSON file method
-            counter = await getNextCounterFromJson(iqamaId, prescriptionNumber, today);
+            
+            // Return counter information
+            res.json({
+                counter,
+                iqamaId,
+                prescriptionNumber,
+                date: today,
+                deviceId
+            });
+            
+        } catch (dbError) {
+            console.error('Database error in /api/counter/next:', dbError);
+            res.status(500).json({ error: 'Database error. Failed to retrieve counter.' });
         }
-        
-        res.json({
-            counter,
-            iqamaId,
-            prescriptionNumber,
-            date: today,
-            deviceId
-        });
     } catch (error) {
         console.error('Error determining next counter:', error);
         res.status(500).json({ error: 'Failed to determine next counter' });
     }
 });
 
-// Helper function to get next counter from JSON
-async function getNextCounterFromJson(iqamaId, prescriptionNumber, date) {
-    // Get all counters
-    const data = await getJsonCounterData();
-    
-    // Create a unique key for this combination
-    const uniqueKey = `${iqamaId}_${prescriptionNumber}_${date}`;
-    
-    // Check if this combination exists for today
-    const existingEntry = Object.keys(data.counters)
-        .find(key => key.startsWith(uniqueKey));
-    
-    let counter = 1; // Default start counter
-    
-    if (existingEntry) {
-        // If the combination exists, use the existing counter
-        counter = data.counters[existingEntry].counter;
-    } else {
-        // If not, find the highest counter for today
-        const todayEntries = Object.values(data.counters)
-            .filter(entry => entry.date === date);
-        
-        if (todayEntries.length > 0) {
-            // Find highest counter number for today
-            const highestCounter = Math.max(...todayEntries.map(entry => entry.counter));
-            counter = highestCounter + 1;
-        }
-    }
-    
-    return counter;
-}
-
 // API endpoint to increment counter
 app.post('/api/counter/increment', async (req, res) => {
     try {
-        const { iqamaId, prescriptionNumber, deviceId, checkOnly } = req.body;
+        const { iqamaId, prescriptionNumber, deviceId = 'unknown', checkOnly = false } = req.body;
         
         if (!iqamaId || !prescriptionNumber) {
             return res.status(400).json({
@@ -217,39 +137,44 @@ app.post('/api/counter/increment', async (req, res) => {
             });
         }
         
-        // Format today's date in YYYY-MM-DD format
+        // Generate today's date in YYYY-MM-DD format
         const today = new Date().toISOString().split('T')[0];
         
-        // Create a unique key for this combination
+        // Create a unique key for this request
         const uniqueKey = `${iqamaId}_${prescriptionNumber}_${today}`;
         
-        let counter = 1; // Default start counter
+        // Determine next counter value
+        let counter = 1; // Default counter value for new entries
+        let isNewEntry = true;
         
-        if (useDatabase && !checkOnly) {
-            try {
-                // Check if this combination exists for today
-                const existingEntry = await db.findCounterByKeyPattern(`${iqamaId}_${prescriptionNumber}_${today}`);
+        try {
+            // Check if this combination exists for today
+            const existingEntry = await db.findCounterByKeyPattern(uniqueKey);
+            
+            if (existingEntry) {
+                // Use existing counter value
+                counter = existingEntry.counter;
+                isNewEntry = false;
+            } else {
+                // Get highest counter for today and increment
+                const highestCounter = await db.getHighestCounterForDate(today);
+                counter = highestCounter > 0 ? highestCounter + 1 : 1;
                 
-                if (existingEntry) {
-                    // If the combination exists, use the existing counter
-                    counter = existingEntry.counter;
-                } else {
-                    // If not, find the highest counter for today
-                    const highestCounter = await db.getHighestCounterForDate(today);
-                    counter = highestCounter > 0 ? highestCounter + 1 : 1;
-                    
-                    // Create a new entry with device ID and timestamp
-                    const fullKey = `${uniqueKey}_${deviceId}_${Date.now()}`;
-                    await db.saveCounter(fullKey, counter, iqamaId, prescriptionNumber, today, deviceId);
+                // Only create a new entry if not just checking
+                if (!checkOnly) {
+                    await db.createCounter(uniqueKey, {
+                        counter,
+                        iqamaId,
+                        prescriptionNumber,
+                        date: today,
+                        deviceId,
+                        createdAt: new Date().toISOString()
+                    });
                 }
-            } catch (dbError) {
-                console.error('Database error in /api/counter/increment:', dbError);
-                // Fall back to JSON method if database fails
-                counter = await incrementCounterInJson(iqamaId, prescriptionNumber, deviceId, today, checkOnly);
             }
-        } else {
-            // Use JSON file method
-            counter = await incrementCounterInJson(iqamaId, prescriptionNumber, deviceId, today, checkOnly);
+        } catch (dbError) {
+            console.error('Database error in /api/counter/increment:', dbError);
+            return res.status(500).json({ error: 'Database error. Failed to increment counter.' });
         }
         
         res.json({
@@ -264,58 +189,6 @@ app.post('/api/counter/increment', async (req, res) => {
         res.status(500).json({ error: 'Failed to increment counter' });
     }
 });
-
-// Helper function to increment counter in JSON
-async function incrementCounterInJson(iqamaId, prescriptionNumber, deviceId, date, checkOnly) {
-    // Get all counters
-    const data = await getJsonCounterData();
-    
-    // Create a unique key for this combination
-    const uniqueKey = `${iqamaId}_${prescriptionNumber}_${date}`;
-    
-    // Check if this combination exists for today
-    const existingEntry = Object.keys(data.counters)
-        .find(key => key.startsWith(uniqueKey));
-    
-    let counter = 1; // Default start counter
-    
-    if (existingEntry) {
-        // If the combination exists, use the existing counter
-        counter = data.counters[existingEntry].counter;
-    } else {
-        // If not, find the highest counter for today
-        const todayEntries = Object.values(data.counters)
-            .filter(entry => entry.date === date);
-        
-        if (todayEntries.length > 0) {
-            // Find highest counter number for today
-            const highestCounter = Math.max(...todayEntries.map(entry => entry.counter));
-            counter = highestCounter + 1;
-        }
-        
-        // If not in check-only mode, save the new counter
-        if (!checkOnly) {
-            // Create a new entry with device ID and timestamp
-            const newKey = `${uniqueKey}_${deviceId}_${Date.now()}`;
-            data.counters[newKey] = {
-                counter,
-                iqamaId,
-                prescriptionNumber,
-                date,
-                deviceId,
-                timestamp: new Date().toISOString()
-            };
-            
-            // Update lastUpdated timestamp
-            data.lastUpdated = new Date().toISOString();
-            
-            // Save the updated data
-            await saveCounterData(data);
-        }
-    }
-    
-    return counter;
-}
 
 // Start the server
 initApp().then(() => {
