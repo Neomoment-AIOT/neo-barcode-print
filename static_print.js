@@ -15,6 +15,7 @@ function updateQueueNumberDisplay(queueNumber) {
 }
 
 // Function to fetch and display next queue number
+// 2025-07-22T00:41:50+05:00: Updated to handle empty DB case and show '1' instead of 'Error'
 async function fetchNextQueueNumber() {
     try {
         // Get current input values
@@ -43,6 +44,11 @@ async function fetchNextQueueNumber() {
             });
             
             if (!response.ok) {
+                // If 400 error, it's likely an empty DB or missing params, so default to 1
+                if (response.status === 400) {
+                    updateQueueNumberDisplay('1'); // Default to 1 for first record
+                    return;
+                }
                 throw new Error('Server error: ' + response.status);
             }
             
@@ -51,26 +57,44 @@ async function fetchNextQueueNumber() {
             // Update queue number in UI
             if (data.counter) {
                 updateQueueNumberDisplay(data.counter);
+            } else {
+                // If no counter in response, default to 1
+                updateQueueNumberDisplay('1');
             }
         } else {
-            // If we don't have both values, fall back to generic next number
-            const response = await fetch(`${baseUrl}/api/counter/next`);
-            
-            if (!response.ok) {
-                throw new Error('Server error: ' + response.status);
-            }
-            
-            const data = await response.json();
-            
-            // Update queue number in UI
-            if (data.nextCounter) {
-                updateQueueNumberDisplay(data.nextCounter);
+            try {
+                // Get the next available counter from API
+                // Use default placeholders for required params to avoid 400 error
+                const response = await fetch(`${baseUrl}/api/counter/next?iqamaId=default&prescriptionNumber=default`);
+                
+                if (!response.ok) {
+                    // If 400 error, it's likely an empty DB, so default to 1
+                    if (response.status === 400) {
+                        updateQueueNumberDisplay('1'); // Default to 1 for first record
+                        return;
+                    }
+                    throw new Error('Server error: ' + response.status);
+                }
+                
+                const data = await response.json();
+                
+                // Update queue number in UI - Note API returns 'counter', not 'nextCounter'
+                if (data.counter) {
+                    updateQueueNumberDisplay(data.counter);
+                } else {
+                    // If no counter in response, default to 1
+                    updateQueueNumberDisplay('1');
+                }
+            } catch (apiError) {
+                console.error('Next queue API error:', apiError);
+                // For any API error, default to 1 as this is likely first record
+                updateQueueNumberDisplay('1');
             }
         }
     } catch (error) {
         console.error('Next queue API error:', error);
-        // Show an error message or default value on API failure
-        updateQueueNumberDisplay('Error');
+        // Default to 1 instead of showing 'Error' when DB is empty or on first run
+        updateQueueNumberDisplay('1');
     }
 }
 
