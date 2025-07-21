@@ -8,6 +8,39 @@ document.addEventListener('DOMContentLoaded', function() {
     const iqamaInput = document.getElementById('iqama');
     const prescriptionInput = document.getElementById('prescription');
     
+    // Initialize device ID (could be enhanced for better device identification)
+    const deviceId = generateDeviceId();
+    
+    // Generate a semi-unique device identifier
+    function generateDeviceId() {
+        // Use existing fingerprint if available in localStorage
+        if (localStorage.getItem('deviceId')) {
+            return localStorage.getItem('deviceId');
+        }
+        
+        // Generate a new one based on browser and device info
+        const fingerprint = [
+            navigator.userAgent,
+            screen.width,
+            screen.height,
+            navigator.language,
+            new Date().getTimezoneOffset()
+        ].join('_');
+        
+        // Create a hash-like value from the fingerprint
+        let hash = 0;
+        for (let i = 0; i < fingerprint.length; i++) {
+            const char = fingerprint.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        
+        // Store and return device ID
+        const deviceIdValue = 'device_' + Math.abs(hash).toString(16);
+        localStorage.setItem('deviceId', deviceIdValue);
+        return deviceIdValue;
+    }
+    
     // Add event listener to the print button
     printBtn.addEventListener('click', handlePrint);
     
@@ -23,6 +56,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
+            // Get counter value from server
+            incrementCounter(iqamaValue, prescriptionValue, deviceId)
+                .then(counterData => {
+                    // Continue with print process using the counter
+                    generatePrintWindow(iqamaValue, prescriptionValue, counterData.counter);
+                })
+                .catch(error => {
+                    console.error('Error getting counter:', error);
+                    // Fall back to printing without counter if server fails
+                    generatePrintWindow(iqamaValue, prescriptionValue, null);
+                });
+        } catch (error) {
+            console.error('Error in print process:', error);
+            alert('Error preparing print. Please try again. Details: ' + error.message);
+        }
+    }
+    
+    // Call server to increment counter
+    async function incrementCounter(iqamaId, prescriptionNumber, deviceId) {
+        try {
+            const response = await fetch('/api/counter/increment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    iqamaId,
+                    prescriptionNumber,
+                    deviceId
+                }),
+            });
+            
+            if (!response.ok) {
+                throw new Error('Server error: ' + response.status);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Counter API error:', error);
+            // Return fallback counter data
+            return { counter: '---', error: error.message };
+        }
+    }
+    
+    // Generate the print window with barcodes
+    function generatePrintWindow(iqamaValue, prescriptionValue, counterValue) {
+        try {
             // Generate barcodes in memory first
             const tempContainer = document.createElement('div');
             tempContainer.style.position = 'absolute';
@@ -175,10 +255,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 </html>
             `;
             
+            // Add counter to the print page HTML if available
+            let printPageWithCounter = printPage;
+            if (counterValue) {
+                // Insert counter before the closing body tag
+                printPageWithCounter = printPage.replace('</body>', `
+                    <div class="counter-section">
+                        <div class="counter-label">Print #:</div>
+                        <div class="counter-value">${counterValue}</div>
+                    </div>
+                    <style>
+                        .counter-section {
+                            margin-top: 5mm;
+                            padding-top: 2mm;
+                            border-top: 1px dashed #ccc;
+                            text-align: center;
+                        }
+                        .counter-label {
+                            font-size: 8pt;
+                            font-weight: bold;
+                            margin-bottom: 1mm;
+                        }
+                        .counter-value {
+                            font-size: 14pt;
+                            font-weight: bold;
+                        }
+                    </style>
+                </body>`);
+            }
+            
             // Open a new window with the static content
             const printWindow = window.open('', '_blank', 'width=400,height=600');
             printWindow.document.open();
-            printWindow.document.write(printPage);
+            printWindow.document.write(printPageWithCounter);
             printWindow.document.close();
             
         } catch (error) {

@@ -1,0 +1,21 @@
+{
+  "counters": {
+    "345543_353554_2025-07-21_device_5dc8312b": {
+      "counter": 1,
+      "iqamaId": "345543",
+      "prescriptionNumber": "353554",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T12:20:55.388Z"
+    },
+    "3455431_353554_2025-07-21_device_5dc8312b": {
+      "counter": 2,
+      "iqamaId": "3455431",
+      "prescriptionNumber": "353554",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T12:30:48.388Z"
+    }
+  },
+  "lastUpdated": "2025-07-21T12:31:17.947Z"
+}
