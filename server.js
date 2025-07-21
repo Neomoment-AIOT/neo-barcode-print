@@ -161,15 +161,9 @@ app.post('/api/counter/increment', async (req, res) => {
                 counter = highestCounter > 0 ? highestCounter + 1 : 1;
                 
                 // Only create a new entry if not just checking
+                // 2025-07-22T01:25:00+05:00: Fixed function call from createCounter to saveCounter
                 if (!checkOnly) {
-                    await db.createCounter(uniqueKey, {
-                        counter,
-                        iqamaId,
-                        prescriptionNumber,
-                        date: today,
-                        deviceId,
-                        createdAt: new Date().toISOString()
-                    });
+                    await db.saveCounter(uniqueKey, counter, iqamaId, prescriptionNumber, today, deviceId);
                 }
             }
         } catch (dbError) {

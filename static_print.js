@@ -16,11 +16,15 @@ function updateQueueNumberDisplay(queueNumber) {
 
 // Function to fetch and display next queue number
 // 2025-07-22T00:41:50+05:00: Updated to handle empty DB case and show '1' instead of 'Error'
+// 2025-07-22T01:40:00+05:00: Added debug logging to trace API call paths
 async function fetchNextQueueNumber() {
     try {
         // Get current input values
         const iqamaValue = document.getElementById('iqama').value.trim();
         const prescriptionValue = document.getElementById('prescription').value.trim();
+        
+        console.log('🔍 DEBUG: fetchNextQueueNumber called');
+        console.log('🔍 DEBUG: iqamaValue="' + iqamaValue + '", prescriptionValue="' + prescriptionValue + '"');
         
         // Use base URL of the current page to handle both local and deployed environments
         const baseUrl = window.location.protocol === 'file:' 
@@ -29,6 +33,9 @@ async function fetchNextQueueNumber() {
         
         // If we have both values, check if this combination already exists
         if (iqamaValue && prescriptionValue) {
+            // 2025-07-22T02:42:00+05:00: Generate deviceId within function scope
+            const deviceId = generateDeviceId();
+            console.log('🔍 DEBUG: Taking PATH 1 - calling /api/counter/increment with actual values, deviceId:', deviceId);
             // Use the increment endpoint with checkOnly=true to see what number would be assigned
             const response = await fetch(`${baseUrl}/api/counter/increment`, {
                 method: 'POST',
@@ -44,57 +51,72 @@ async function fetchNextQueueNumber() {
             });
             
             if (!response.ok) {
-                // If 400 error, it's likely an empty DB or missing params, so default to 1
-                if (response.status === 400) {
-                    updateQueueNumberDisplay('1'); // Default to 1 for first record
-                    return;
-                }
-                throw new Error('Server error: ' + response.status);
+                // 2025-07-22T02:08:00+05:00: NEVER show incorrect queue numbers
+                console.error('API error status:', response.status);
+                console.warn('API error - keeping current display to avoid showing wrong queue number');
+                return; // Keep current display (Loading...) instead of showing wrong number
             }
             
             const data = await response.json();
+            console.log('🔍 DEBUG: PATH 1 API response:', data);
             
             // Update queue number in UI
             if (data.counter) {
+                console.log('🔍 DEBUG: PATH 1 updating queue number to:', data.counter);
                 updateQueueNumberDisplay(data.counter);
             } else {
-                // If no counter in response, default to 1
-                updateQueueNumberDisplay('1');
+                // 2025-07-22T02:08:00+05:00: NEVER show incorrect queue numbers
+                console.warn('No counter in API response - keeping current display to avoid showing wrong number');
+                // Keep current display instead of showing wrong number
             }
         } else {
+            console.log('🔍 DEBUG: Taking PATH 2 - input fields empty, getting highest counter for today');
             try {
-                // Get the next available counter from API
-                // Use default placeholders for required params to avoid 400 error
-                const response = await fetch(`${baseUrl}/api/counter/next?iqamaId=default&prescriptionNumber=default`);
+                // 2025-07-22T01:57:00+05:00: Fixed to show actual next queue number for today
+                // Get the actual highest counter for today and show next number
+                const apiUrl = `${baseUrl}/api/counter`;
+                console.log('🔍 DEBUG: Making API call to get all counters:', apiUrl);
+                const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
-                    // If 400 error, it's likely an empty DB, so default to 1
-                    if (response.status === 400) {
-                        updateQueueNumberDisplay('1'); // Default to 1 for first record
-                        return;
-                    }
+                    // 2025-07-22T02:12:00+05:00: NEVER show incorrect queue numbers
+                    console.error('400 error - keeping current display to avoid showing wrong queue number');
+                    console.warn('API 400 error - maintaining current display state');
+                    return; // Keep current display instead of showing wrong number
                     throw new Error('Server error: ' + response.status);
                 }
                 
                 const data = await response.json();
+                console.log('🔍 DEBUG: PATH 2 API response:', data);
                 
-                // Update queue number in UI - Note API returns 'counter', not 'nextCounter'
-                if (data.counter) {
-                    updateQueueNumberDisplay(data.counter);
-                } else {
-                    // If no counter in response, default to 1
-                    updateQueueNumberDisplay('1');
+                // 2025-07-22T01:58:00+05:00: Calculate actual next queue number from all counters for today
+                const today = new Date().toISOString().split('T')[0];
+                let highestCounter = 0;
+                
+                // Find highest counter for today
+                if (data.counters && typeof data.counters === 'object') {
+                    Object.values(data.counters).forEach(counterInfo => {
+                        if (counterInfo.date === today && counterInfo.counter > highestCounter) {
+                            highestCounter = counterInfo.counter;
+                        }
+                    });
                 }
+                
+                const nextCounter = highestCounter + 1;
+                console.log('🔍 DEBUG: PATH 2 calculated next counter:', nextCounter, '(highest today:', highestCounter, ')');
+                updateQueueNumberDisplay(nextCounter);
             } catch (apiError) {
                 console.error('Next queue API error:', apiError);
-                // For any API error, default to 1 as this is likely first record
-                updateQueueNumberDisplay('1');
+                // 2025-07-22T02:07:00+05:00: NEVER show incorrect queue numbers - keep loading state
+                // Don't update display with wrong value - let it stay as 'Loading...'
+                console.warn('API error - keeping current display to avoid showing wrong queue number');
             }
         }
     } catch (error) {
         console.error('Next queue API error:', error);
-        // Default to 1 instead of showing 'Error' when DB is empty or on first run
-        updateQueueNumberDisplay('1');
+        // 2025-07-22T02:07:00+05:00: NEVER show incorrect queue numbers - keep loading state
+        // Don't update display with wrong value - let it stay as 'Loading...'
+        console.warn('General error - keeping current display to avoid showing wrong queue number');
     }
 }
 
@@ -212,8 +234,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     autoClearTimer = setTimeout(() => {
                         clearFields();
-                        console.log('Fields auto-cleared after 20 seconds');
-                    }, 20000); // 20 seconds
+                        console.log('Fields auto-cleared after 5 seconds');
+                    }, 5000); // 5 seconds
                 })
                 .catch(error => {
                     console.error('Error getting counter:', error);
@@ -267,7 +289,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Ensure we have valid values
             const safeIqamaValue = iqamaValue || 'N/A';
             const safePrescriptionValue = prescriptionValue || 'N/A';
-            const safeCounterValue = (counterValue && counterValue !== 'Error') ? counterValue : '1';
+            // 2025-07-22T02:12:00+05:00: NEVER use '1' as fallback - use actual counter value or Loading
+            const safeCounterValue = (counterValue && counterValue !== 'Error') ? counterValue : 'Loading...';
             
             // Generate barcodes in memory first
             const tempContainer = document.createElement('div');
@@ -582,6 +605,37 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Unable to open print window. Please check browser settings and try again.');
         }
     }
+    
+    // 2025-07-22T02:00:00+05:00: Add real-time queue number updates for idempotency
+    // Simple debounce function
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Update queue number whenever input fields change
+    const updateQueueOnInput = debounce(() => {
+        const currentIqama = iqamaInput.value.trim();
+        const currentPrescription = prescriptionInput.value.trim();
+        console.log('🎯 INPUT LISTENER TRIGGERED! Iqama:', currentIqama, 'Prescription:', currentPrescription);
+        fetchNextQueueNumber();
+    }, 500); // Wait 500ms after user stops typing
+    
+    iqamaInput.addEventListener('input', () => {
+        console.log('🎯 Iqama input changed to:', iqamaInput.value);
+        updateQueueOnInput();
+    });
+    prescriptionInput.addEventListener('input', () => {
+        console.log('🎯 Prescription input changed to:', prescriptionInput.value);
+        updateQueueOnInput();
+    });
     
     // Handle keyboard enter key press
     [iqamaInput, prescriptionInput].forEach(input => {
