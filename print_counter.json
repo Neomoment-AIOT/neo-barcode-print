@@ -79,7 +79,15 @@
       "date": "2025-07-21",
       "deviceId": "device_356b06e7",
       "timestamp": "2025-07-21T16:15:46.946Z"
+    },
+    "345345345_345345435354_2025-07-21_device_5dc8312b": {
+      "counter": 11,
+      "iqamaId": "345345345",
+      "prescriptionNumber": "345345435354",
+      "date": "2025-07-21",
+      "deviceId": "device_5dc8312b",
+      "timestamp": "2025-07-21T16:31:02.170Z"
     }
   },
-  "lastUpdated": "2025-07-21T16:15:46.946Z"
+  "lastUpdated": "2025-07-21T16:31:02.170Z"
 }
