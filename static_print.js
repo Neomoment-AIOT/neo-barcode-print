@@ -117,14 +117,59 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     <script>
+                        // Variables to track print dialog state
+                        let printDialogClosed = false;
+                        let closeTimeout;
+                        
                         // Auto print when the page is loaded
                         window.onload = function() {
+                            // Display message to user
+                            const msgDiv = document.createElement('div');
+                            msgDiv.style.margin = '5mm 0';
+                            msgDiv.style.padding = '2mm';
+                            msgDiv.style.backgroundColor = '#f0f0f0';
+                            msgDiv.style.borderRadius = '2mm';
+                            msgDiv.style.textAlign = 'center';
+                            msgDiv.style.fontSize = '9pt';
+                            msgDiv.innerHTML = 'Window will close automatically after printing<br>or in 20 seconds.';
+                            document.body.appendChild(msgDiv);
+                            
                             // Wait for rendering to complete
                             setTimeout(function() {
-                                window.print();
-                                // Don't close automatically - let the user close it
+                                try {
+                                    window.print();
+                                } catch (e) {
+                                    console.error('Print error:', e);
+                                }
+                                
+                                // Start auto-close countdown after print dialog appears
+                                closeTimeout = setTimeout(function() {
+                                    try {
+                                        window.close();
+                                    } catch (e) {
+                                        console.error('Unable to close window:', e);
+                                        // Update message if window cannot be closed
+                                        msgDiv.innerHTML = 'Please close this window manually.';
+                                        msgDiv.style.backgroundColor = '#ffe0e0';
+                                    }
+                                }, 20000); // 20 seconds
                             }, 500);
-                        }
+                        };
+                        
+                        // Try to detect when print dialog closes
+                        window.addEventListener('focus', function() {
+                            // When window regains focus, print dialog might have been closed
+                            setTimeout(function() {
+                                if (!printDialogClosed) {
+                                    printDialogClosed = true;
+                                    try {
+                                        window.close();
+                                    } catch (e) {
+                                        console.error('Unable to close window after print:', e);
+                                    }
+                                }
+                            }, 1000);
+                        });
                     </script>
                 </body>
                 </html>
