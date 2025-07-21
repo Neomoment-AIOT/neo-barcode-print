@@ -183,9 +183,31 @@ document.addEventListener('DOMContentLoaded', function() {
                             display: block;
                             margin: 0 auto;
                         }
+                        /* Counter styling */
+                        .counter-section {
+                            margin: 5mm 0;
+                            padding: 2mm;
+                            text-align: center;
+                            border-bottom: 1px dashed #ccc;
+                        }
+                        .counter-label {
+                            font-size: 8pt;
+                            font-weight: bold;
+                            margin-bottom: 1mm;
+                        }
+                        .counter-value {
+                            font-size: 14pt;
+                            font-weight: bold;
+                        }
                     </style>
                 </head>
                 <body>
+                    <!-- Counter display at the top -->
+                    <div class="counter-section">
+                        <div class="counter-label">Print #:</div>
+                        <div class="counter-value">${counterValue || '1'}</div>
+                    </div>
+                    
                     <div class="barcode-container">
                         <div class="barcode-item">
                             <div class="barcode-label">Iqama ID</div>
