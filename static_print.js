@@ -95,8 +95,14 @@ document.addEventListener('DOMContentLoaded', function() {
             return await response.json();
         } catch (error) {
             console.error('Counter API error:', error);
-            // Return fallback counter data
-            return { counter: '---', error: error.message };
+            // Use localStorage as fallback
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const key = `print_counter_${iqamaId}_${prescriptionNumber}_${today}`;
+            let localCounter = parseInt(localStorage.getItem(key) || '0');
+            localCounter += 1;
+            localStorage.setItem(key, localCounter.toString());
+            
+            return { counter: localCounter, error: error.message };
         }
     }
     
@@ -167,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             padding: 2mm;
                         }
                         .barcode-item {
-                            margin: 10mm 0;
+                            margin: 2mm 0;
                             text-align: center;
                         }
                         .barcode-label {
@@ -185,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         /* Counter styling */
                         .counter-section {
-                            margin: 5mm 0;
+                            margin: 0;
                             padding: 2mm;
                             text-align: center;
                             border-bottom: 1px dashed #ccc;
@@ -208,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="counter-value">${counterValue || '1'}</div>
                     </div>
                     
-                    <div class="barcode-container">
+                    <div class="barcode-container" style="margin-top: 0;">
                         <div class="barcode-item">
                             <div class="barcode-label">Iqama ID</div>
                             ${iqamaSvgContent}
