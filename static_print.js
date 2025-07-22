@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     autoClearTimer = setTimeout(() => {
                         clearFields();
                         console.log('Fields auto-cleared after 5 seconds');
-                    }, 5000); // 5 seconds
+                    }, 60000); // 5 seconds
                 })
                 .catch(error => {
                     console.error('Error getting counter:', error);
