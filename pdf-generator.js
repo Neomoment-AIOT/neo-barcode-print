@@ -44,11 +44,34 @@ function generatePDF(iqamaValue, prescriptionValue, counterValue) {
     const now = new Date();
     pdf.text(`${now.toLocaleString()}`, 28.5, 75, { align: 'center' });
     
-    // Download PDF
-    const filename = `barcode-${counterValue}-${Date.now()}.pdf`;
-    pdf.save(filename);
+    // 2025-07-22T16:08:00+05:00: Generate PDF and print automatically (no download)
+    const pdfBlob = pdf.output('blob');
     
-    return filename;
+    // Create object URL for the PDF
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    
+    // Open PDF in hidden window and auto-print
+    const printWindow = window.open(pdfUrl, '_blank', 'width=400,height=600');
+    
+    if (printWindow) {
+        printWindow.onload = function() {
+            // Auto-print the PDF without user intervention
+            setTimeout(() => {
+                printWindow.print();
+                
+                // Auto-close after printing
+                setTimeout(() => {
+                    printWindow.close();
+                    URL.revokeObjectURL(pdfUrl); // Clean up
+                }, 2000);
+            }, 500);
+        };
+    } else {
+        alert('Pop-up blocker prevented printing. Please allow pop-ups for this site.');
+        URL.revokeObjectURL(pdfUrl);
+    }
+    
+    return `barcode-${counterValue}-${Date.now()}.pdf`;
 }
 
 /**

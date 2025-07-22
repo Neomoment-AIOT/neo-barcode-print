@@ -235,8 +235,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Generate and download PDF at exact 57mm x 80mm
             const filename = window.generatePDF(iqamaValue, prescriptionValue, counterValue);
             
-            console.log(`PDF generated: ${filename}`);
-            alert(`PDF downloaded: ${filename}\nSize: 57mm x 80mm\nReady to print on any printer!`);
+            console.log(`PDF generated and printing: ${filename}`);
+            // No alert needed - PDF prints automatically without user intervention
             
         } catch (error) {
             console.error('PDF generation error:', error);
