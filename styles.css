@@ -142,7 +142,9 @@ button:hover {
     /* Basic print settings */
     @page {
         margin: 0;
-        size: 57mm auto; /* Set paper width to 57mm for thermal printer */
+        /* 2025-07-22T13:34:00+05:00: Changed from 57mm auto to fixed 57mm x 80mm as per user request */
+        /* Original: size: 57mm auto; */
+        size: 57mm 80mm; /* Set paper dimensions to 57mm width x 80mm height for thermal printer */
     }
     
     /* Hide all elements except print area */

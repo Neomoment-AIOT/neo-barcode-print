@@ -433,10 +433,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="barcode-label">Prescription #</div>
                         ${prescriptionSvgContent}
                     </div>
+                    <!-- 2025-07-22T13:34:00+05:00: Removed bottom queue number display as per user request -->
+                    <!-- Original queue number display:
                     <div class="barcode-item">
                         <div class="barcode-label">Queue #:</div>
                         <div class="counter-value">${counterValue}</div>
                     </div>
+                    -->
                 </div>
                 
                 <div class="footer">
