@@ -141,10 +141,9 @@ button:hover {
 @media print {
     /* Basic print settings */
     @page {
-        margin: 0;
-        /* 2025-07-22T13:34:00+05:00: Changed from 57mm auto to fixed 57mm x 80mm as per user request */
-        /* Original: size: 57mm auto; */
-        size: 57mm 80mm; /* Set paper dimensions to 57mm width x 80mm height for thermal printer */
+        /* 2025-07-22T14:41:00+05:00: Removed custom size for Android compatibility - let printers scale content */
+        /* Custom sizes cause Android 'printer not available' errors: size: 57mm 80mm; */
+        margin: 2mm; /* Keep margins only - printers will scale narrow content to A4/Letter */
     }
     
     /* Hide all elements except print area */
