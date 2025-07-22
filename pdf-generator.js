@@ -27,7 +27,9 @@ function generatePDF(iqamaValue, prescriptionValue, counterValue) {
     // Add queue number at top
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
-    pdf.text(`Queue: ${counterValue}`, 28.5, 15, { align: 'center' });
+    // 2025-07-22T16:45:00+05:00: Fixed queue number display - ensure it's a string/number, not object
+    const queueNumber = typeof counterValue === 'object' ? (counterValue.counter || counterValue.value || 'N/A') : counterValue;
+    pdf.text(`Queue: ${queueNumber}`, 28.5, 15, { align: 'center' });
     
     // Add separator line
     pdf.line(5, 18, 52, 18);
@@ -75,7 +77,7 @@ function generatePDF(iqamaValue, prescriptionValue, counterValue) {
 }
 
 /**
- * Generate barcode representation in PDF
+ * Generate Code 128 barcode in PDF using JsBarcode
  * @param {jsPDF} pdf - PDF instance
  * @param {string} value - Value to encode
  * @param {string} label - Label text
@@ -87,56 +89,54 @@ function generateBarcodeForPDF(pdf, value, label, y) {
     pdf.setFont('helvetica', 'bold');
     pdf.text(label, 28.5, y - 2, { align: 'center' });
     
-    // Create barcode pattern (simplified Code128-like pattern)
-    const barcodeWidth = 45;
-    const barcodeHeight = 8;
-    const startX = (57 - barcodeWidth) / 2; // Center horizontally
-    
-    // Draw barcode bars (simplified representation)
-    pdf.setFillColor(0, 0, 0); // Black bars
-    
-    // Generate bar pattern based on value
-    const barPattern = generateBarPattern(value);
-    let x = startX;
-    const barWidth = barcodeWidth / barPattern.length;
-    
-    for (let i = 0; i < barPattern.length; i++) {
-        if (barPattern[i] === '1') {
-            pdf.rect(x, y, barWidth, barcodeHeight, 'F'); // Fill black bar
+    try {
+        // 2025-07-22T16:45:00+05:00: Generate proper Code 128 barcode using JsBarcode
+        // Create temporary canvas for barcode generation
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size for barcode
+        canvas.width = 350; // High resolution for quality
+        canvas.height = 80;
+        
+        // Generate Code 128 barcode
+        if (window.JsBarcode) {
+            JsBarcode(canvas, value, {
+                format: "CODE128",
+                width: 2,
+                height: 60,
+                displayValue: false, // We'll add text separately
+                background: "#ffffff",
+                lineColor: "#000000",
+                margin: 0
+            });
+            
+            // Convert canvas to image data and add to PDF
+            const imgData = canvas.toDataURL('image/png');
+            const barcodeWidth = 45;
+            const barcodeHeight = 8;
+            const startX = (57 - barcodeWidth) / 2;
+            
+            pdf.addImage(imgData, 'PNG', startX, y, barcodeWidth, barcodeHeight);
+        } else {
+            // Fallback if JsBarcode not available
+            pdf.setFontSize(6);
+            pdf.text('Barcode library not loaded', 28.5, y + 4, { align: 'center' });
         }
-        x += barWidth;
+    } catch (error) {
+        console.error('Barcode generation error:', error);
+        // Fallback - just show the value
+        pdf.setFontSize(8);
+        pdf.text(value, 28.5, y + 4, { align: 'center' });
     }
     
     // Add human-readable text below barcode
     pdf.setFontSize(6);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(value, 28.5, y + barcodeHeight + 3, { align: 'center' });
+    pdf.text(value, 28.5, y + 10, { align: 'center' });
 }
 
-/**
- * Generate simplified bar pattern for barcode
- * @param {string} value - Value to encode
- * @returns {string} - Binary pattern (1=bar, 0=space)
- */
-function generateBarPattern(value) {
-    // Simple encoding: convert each character to binary representation
-    let pattern = '11010010'; // Start pattern
-    
-    for (let i = 0; i < value.length; i++) {
-        const charCode = value.charCodeAt(i);
-        const binary = (charCode % 127).toString(2).padStart(7, '0');
-        pattern += binary;
-    }
-    
-    pattern += '1100101'; // End pattern
-    
-    // Ensure pattern length is manageable
-    if (pattern.length > 200) {
-        pattern = pattern.substring(0, 200);
-    }
-    
-    return pattern;
-}
+// 2025-07-22T16:45:00+05:00: Removed old generateBarPattern function - now using proper Code 128 with JsBarcode
 
 /**
  * Check if jsPDF library is loaded
