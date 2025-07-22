@@ -568,11 +568,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="value">${prescriptionValue}</div>
                     </div>
                     
-                    <div class="item">
-                        <div class="label">Queue #</div>
-                        <div class="value">${counterValue}</div>
-                    </div>
-                    
                     <div style="text-align:center; margin-top:10mm; font-size:9pt;">
                         Text backup mode (barcode unavailable)
                     </div>
