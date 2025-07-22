@@ -186,6 +186,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set up event listener for the print button
     printBtn.addEventListener('click', handlePrint);
     
+    // 2025-07-22T15:02:00+05:00: Set up event listener for the PDF download button
+    const pdfBtn = document.getElementById('pdfBtn');
+    if (pdfBtn) {
+        pdfBtn.addEventListener('click', handlePDFDownload);
+    }
+    
     // Set up event listener for the clear button
     clearBtn.addEventListener('click', clearFields);
     
@@ -206,8 +212,40 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchNextQueueNumber();
     }
     
+    // 2025-07-22T15:02:00+05:00: Handle PDF download functionality for exact 57mm x 80mm
+    async function handlePDFDownload() {
+        const iqamaValue = iqamaInput.value.trim();
+        const prescriptionValue = prescriptionInput.value.trim();
+        
+        if (!iqamaValue || !prescriptionValue) {
+            alert('Please enter both Iqama ID and Prescription number before generating PDF.');
+            return;
+        }
+        
+        try {
+            // Get counter value first
+            const counterValue = await incrementCounter(iqamaValue, prescriptionValue, generateDeviceId());
+            
+            // Check if PDF library is loaded
+            if (!window.generatePDF) {
+                alert('PDF library is loading, please try again in a moment.');
+                return;
+            }
+            
+            // Generate and download PDF at exact 57mm x 80mm
+            const filename = window.generatePDF(iqamaValue, prescriptionValue, counterValue);
+            
+            console.log(`PDF generated: ${filename}`);
+            alert(`PDF downloaded: ${filename}\nSize: 57mm x 80mm\nReady to print on any printer!`);
+            
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            alert('Error generating PDF. Please try again.');
+        }
+    }
+    
     // Handle print functionality
-    function handlePrint() {
+    async function handlePrint() {
         try {
             // Validate inputs
             const iqamaValue = iqamaInput.value.trim();

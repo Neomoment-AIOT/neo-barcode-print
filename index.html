@@ -27,6 +27,8 @@
         </div>
         <div class="button-group">
             <button id="printBtn">Print Barcode</button>
+            <!-- 2025-07-22T15:02:00+05:00: Added PDF download for 57mm x 80mm exact size -->
+            <button id="pdfBtn" class="pdf-button">Download PDF (57mm x 80mm)</button>
             <button id="clearBtn" class="clear-button">Clear</button>
         </div>
         <!-- Hidden barcode containers for printing -->
@@ -47,6 +49,9 @@
         </div>
     </div>
     <script src="JsBarcode.all.min.js"></script>
+    <!-- 2025-07-22T15:02:00+05:00: Added jsPDF library for 57mm x 80mm PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="pdf-generator.js"></script>
     <script src="static_print.js"></script>
     <!-- 2025-07-20T21:49:00+05:00: Switched to static barcode generation to avoid runtime JS execution issues -->
 </body>
