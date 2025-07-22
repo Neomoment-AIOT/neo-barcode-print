@@ -234,8 +234,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     autoClearTimer = setTimeout(() => {
                         clearFields();
-                        console.log('Fields auto-cleared after 5 seconds');
-                    }, 60000); // 5 seconds
+                        console.log('Fields auto-cleared after 60 seconds');
+                    }, 60000); // 60 seconds
                 })
                 .catch(error => {
                     console.error('Error getting counter:', error);
@@ -360,9 +360,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <head>
                 <title>Barcode Print</title>
                 <style>
+                    /* 2025-07-22T14:13:00+05:00: Fixed Android compatibility - custom sizes cause 'printer not available' errors */
                     @page {
-                        size: 57mm auto;
-                        margin: 0;
+                        /* Original custom size caused Android issues: size: 57mm auto; */
+                        margin: 2mm; /* Small margins for mobile compatibility */
                     }
                     body {
                         width: 57mm;
@@ -508,9 +509,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <head>
                 <title>Barcode Print</title>
                 <style>
+                    /* 2025-07-22T14:13:00+05:00: Fixed Android compatibility - custom sizes cause 'printer not available' errors */
                     @page {
-                        size: 57mm auto;
-                        margin: 0;
+                        /* Original custom size caused Android issues: size: 57mm auto; */
+                        margin: 2mm; /* Small margins for mobile compatibility */
                     }
                     body {
                         width: 57mm;
