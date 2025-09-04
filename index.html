@@ -65,9 +65,7 @@
         <button id="clearBtn" class="clear-button">Clear</button>
     </div>
 </div>
-
 <script>
-  // ✅ Language toggle logic
   const langToggle = document.getElementById("langToggle");
   const toggleCircle = document.getElementById("toggleCircle");
 
@@ -78,19 +76,27 @@
       title: "Barcode Printer",
       nextQueue: "Next Queue Number: ",
       iqama: "Iqama ID#:",
+      iqamaPlaceholder: "Enter Iqama ID",
       prescription: "Prescription #:",
+      prescriptionPlaceholder: "Enter Prescription #",
       print: "Print Barcode",
       printPDF: "Print Barcode (57mm x 80mm)",
-      clear: "Clear"
+      clear: "Clear",
+      build: "Build: 2025-07-22 15:51",
+      loading: "Loading..."
     },
     ar: {
       title: "طابعة الباركود",
       nextQueue: "رقم الدور التالي: ",
       iqama: "رقم الإقامة#:",
+      iqamaPlaceholder: "أدخل رقم الإقامة",
       prescription: "رقم الوصفة #:",
+      prescriptionPlaceholder: "أدخل رقم الوصفة",
       print: "طباعة الباركود",
       printPDF: "طباعة الباركود (57مم × 80مم)",
-      clear: "مسح"
+      clear: "مسح",
+      build: "بناء: 2025-07-22 15:51",
+      loading: "جار التحميل..."
     }
   };
 
@@ -98,10 +104,14 @@
     document.getElementById("title").innerText = translations[language].title;
     document.getElementById("next-queue-label").innerText = translations[language].nextQueue;
     document.getElementById("iqama-label").innerText = translations[language].iqama;
+    document.getElementById("iqama").placeholder = translations[language].iqamaPlaceholder;
     document.getElementById("prescription-label").innerText = translations[language].prescription;
+    document.getElementById("prescription").placeholder = translations[language].prescriptionPlaceholder;
     document.getElementById("printBtn").innerText = translations[language].print;
     document.getElementById("pdfBtn").innerText = translations[language].printPDF;
     document.getElementById("clearBtn").innerText = translations[language].clear;
+    document.getElementById("build-timestamp").innerText = translations[language].build;
+    document.getElementById("next-queue-number").innerText = translations[language].loading;
   }
 
   langToggle.addEventListener("click", () => {
@@ -113,5 +123,7 @@
 
   updateText(); // initialize
 </script>
+
+
 </body>
 </html>

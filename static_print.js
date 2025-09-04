@@ -506,17 +506,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             }, 20000);
                         }, 500);
                     };
-                    
-                    // Close window when print dialog is closed
-                    window.addEventListener('afterprint', function() {
-                        setTimeout(function() {
-                            try {
-                                window.close();
-                            } catch (e) {
-                                console.error('Window close error after print:', e);
-                            }
-                        }, 1000);
-                    });
                 </script>
             </body>
             </html>
