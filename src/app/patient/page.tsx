@@ -174,19 +174,83 @@ export default function PatientPage() {
 
             const printWindow = window.open("", "printWindow", "width=400,height=600");
             if (printWindow) {
-                printWindow.document.write(`
+                // Create a new SVG for the queue number barcode with larger font
+                const queueSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
+                JsBarcode(queueSvg, String(nextQueue), {
+                    format: "CODE128",
+                    width: 2,
+                    height: 50,  // Slightly taller for better visibility
+                    displayValue: true,
+                    fontSize: 14,  // Increased from 10 to 14
+                    margin: 5,
+                    fontOptions: 'bold',
+                });
+                
+                // Create a temporary div to safely set innerHTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = `
+      <!DOCTYPE html>
       <html>
-        <head><title>${t.title}</title></head>
+        <head>
+          <title>${t.title}</title>
+          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              text-align: center; 
+              margin: 0;
+              padding: 10px;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .barcode-container { 
+              margin: 15px 0;
+              page-break-inside: avoid;
+            }
+            h3 { 
+              margin: 15px 0 5px; 
+              font-size: 16px;
+              font-weight: bold;
+            }
+            .queue-number {
+              font-size: 24px;
+              font-weight: bold;
+              margin: 10px 0;
+            }
+            @media print {
+              @page {
+                size: 57mm 80mm;
+                margin: 0;
+              }
+              body {
+                width: 57mm;
+                height: 80mm;
+                margin: 0 auto;
+                padding: 5mm;
+              }
+            }
+          </style>
+        </head>
         <body>
-          <div>
+          <div class="barcode-container">
+            <h3>${language === 'en' ? 'Queue Number' : 'رقم الدور'}</h3>
+            <div class="queue-number">${nextQueue}</div>
+            ${queueSvg.outerHTML}
+          </div>
+          <div class="barcode-container">
             <h3>${t.iqamaPrintLabel}</h3>
             ${iqamaSvgRef.current?.outerHTML || ""}
+          </div>
+          <div class="barcode-container">
             <h3>${t.prescriptionPrintLabel}</h3>
             ${prescriptionSvgRef.current?.outerHTML || ""}
           </div>
         </body>
-      </html>
-    `);
+      </html>`;
+
+                // Write the content to the print window
+                printWindow.document.open('text/html', 'replace');
+                printWindow.document.write(tempDiv.innerHTML);
                 printWindow.document.close();
                 printWindow.focus();
                 setTimeout(() => {
@@ -210,114 +274,154 @@ export default function PatientPage() {
         };
      */
     const handlePdf = async () => {
-        if (!validateInputs()) return; // ⬅ block if invalid
+        if (!validateInputs()) return;
 
         try {
-            // ⬅ Save first (like handlePrint)
             const counterRow = await saveToDB(iqama, prescription);
+            const currentQueue = String(counterRow.counter);
             setNextQueue(String(counterRow.counter + 1));
             console.log("✅ Saved (PDF):", counterRow);
 
-            // ⬅ Then continue with your existing PDF logic
-            const doc = new jsPDF({
-                unit: "mm",
-                format: [57, 80]
+            const doc = new jsPDF({ unit: "mm", format: [57, 80] });
+            
+            // QUEUE NUMBER SECTION 
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(language === 'en' ? 'Queue Number' : 'رقم الدور', 28.5, 8, { align: 'center' });
+            
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            doc.text(currentQueue, 28.5, 16, { align: 'center' });
+
+            // Queue Number Barcode - smaller
+            const queueSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
+            JsBarcode(queueSvg, currentQueue, {
+                format: "CODE128",
+                width: 1.5,
+                height: 20,
+                displayValue: true,
+                fontSize: 8,
+                margin: 3,
             });
 
-            doc.setFontSize(10);
-            let y = 10;
+            const queueSvgString = new XMLSerializer().serializeToString(queueSvg);
+            const queueCanvas = document.createElement("canvas");
+            const queueCtx = queueCanvas.getContext("2d");
+            const queueImg = new window.Image();
+            const queueSvgBlob = new Blob([queueSvgString], { type: "image/svg+xml;charset=utf-8" });
+            const queueUrl = URL.createObjectURL(queueSvgBlob);
+
+            await new Promise<void>((resolve) => {
+                queueImg.onload = () => {
+                    queueCanvas.width = queueImg.width;
+                    queueCanvas.height = queueImg.height;
+                    queueCtx?.drawImage(queueImg, 0, 0);
+                    const pngDataUrl = queueCanvas.toDataURL("image/png");
+                    doc.addImage(pngDataUrl, "PNG", 10, 20, 37, 8);
+                    URL.revokeObjectURL(queueUrl);
+                    resolve();
+                };
+                queueImg.src = queueUrl;
+            });
+
+            // IQAMA ID SECTION - smaller text
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${t.iqamaPrintLabel}`, 28.5, 35, { align: 'center' });
 
             if (iqamaSvgRef.current) {
-                const svgString = new XMLSerializer().serializeToString(iqamaSvgRef.current);
-                const canvas = document.createElement("canvas");
-                const ctx = canvas.getContext("2d");
-                const img = new window.Image();
-
-                const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-                const url = URL.createObjectURL(svgBlob);
+                const iqamaSvgString = new XMLSerializer().serializeToString(iqamaSvgRef.current);
+                const iqamaCanvas = document.createElement("canvas");
+                const iqamaCtx = iqamaCanvas.getContext("2d");
+                const iqamaImg = new window.Image();
+                const iqamaSvgBlob = new Blob([iqamaSvgString], { type: "image/svg+xml;charset=utf-8" });
+                const iqamaUrl = URL.createObjectURL(iqamaSvgBlob);
 
                 await new Promise<void>((resolve) => {
-                    img.onload = () => {
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        ctx?.drawImage(img, 0, 0);
-                        const pngDataUrl = canvas.toDataURL("image/png");
-                        doc.text(`${t.iqamaPrintLabel}:`, 10, y);
-                        doc.addImage(pngDataUrl, "PNG", 10, y + 2, 35, 12);
-                        URL.revokeObjectURL(url);
+                    iqamaImg.onload = () => {
+                        iqamaCanvas.width = iqamaImg.width;
+                        iqamaCanvas.height = iqamaImg.height;
+                        iqamaCtx?.drawImage(iqamaImg, 0, 0);
+                        const pngDataUrl = iqamaCanvas.toDataURL("image/png");
+                        doc.addImage(pngDataUrl, "PNG", 10, 38, 37, 8);
+                        URL.revokeObjectURL(iqamaUrl);
                         resolve();
                     };
-                    img.src = url;
+                    iqamaImg.src = iqamaUrl;
                 });
-
-                y += 25;
             }
+
+            // PRESCRIPTION SECTION - smaller text
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${t.prescriptionPrintLabel}`, 28.5, 52, { align: 'center' });
 
             if (prescriptionSvgRef.current) {
-                const svgString = new XMLSerializer().serializeToString(prescriptionSvgRef.current);
-                const canvas = document.createElement("canvas");
-                const ctx = canvas.getContext("2d");
-                const img = new window.Image();
-
-                const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-                const url = URL.createObjectURL(svgBlob);
+                const prescriptionSvgString = new XMLSerializer().serializeToString(prescriptionSvgRef.current);
+                const prescriptionCanvas = document.createElement("canvas");
+                const prescriptionCtx = prescriptionCanvas.getContext("2d");
+                const prescriptionImg = new window.Image();
+                const prescriptionSvgBlob = new Blob([prescriptionSvgString], { type: "image/svg+xml;charset=utf-8" });
+                const prescriptionUrl = URL.createObjectURL(prescriptionSvgBlob);
 
                 await new Promise<void>((resolve) => {
-                    img.onload = () => {
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        ctx?.drawImage(img, 0, 0);
-                        const pngDataUrl = canvas.toDataURL("image/png");
-                        doc.text(`${t.prescriptionPrintLabel}:`, 10, y);
-                        doc.addImage(pngDataUrl, "PNG", 10, y + 2, 35, 12);
-                        URL.revokeObjectURL(url);
+                    prescriptionImg.onload = () => {
+                        prescriptionCanvas.width = prescriptionImg.width;
+                        prescriptionCanvas.height = prescriptionImg.height;
+                        prescriptionCtx?.drawImage(prescriptionImg, 0, 0);
+                        const pngDataUrl = prescriptionCanvas.toDataURL("image/png");
+                        doc.addImage(pngDataUrl, "PNG", 10, 55, 37, 8);
+                        URL.revokeObjectURL(prescriptionUrl);
                         resolve();
                     };
-                    img.src = url;
+                    prescriptionImg.src = prescriptionUrl;
                 });
             }
 
-            doc.save("barcode.pdf");
-        } catch (e) {
-            alert("Error saving to database");
-            console.error("❌ PDF Save Error:", e);
-        }
-    };
+            // Save the PDF
+            doc.save(`queue-${currentQueue}.pdf`);
 
+    } catch (e) {
+        console.error("Error generating PDF:", e);
+        alert(language === "en" 
+            ? "Error generating PDF. Please try again." 
+            : "خطأ في إنشاء ملف PDF. يرجى المحاولة مرة أخرى.");
+    }
+};
 
-    // Clear inputs
-    const handleClear = () => {
-        setIqama("");
-        setPrescription("");
-        setNextQueue(t.loading);
-    };
+// Clear inputs
+const handleClear = () => {
+    setIqama("");
+    setPrescription("");
+    setNextQueue(t.loading);
+};
 
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 relative">
-            {/* Back Button */}
-            <button
-                onClick={() => (window.location.href = "/")}
-                className="absolute top-4 left-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition"
+return (
+<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 relative">
+    {/* Back Button */}
+    <button
+        onClick={() => (window.location.href = "/")}
+        className="absolute top-4 left-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition"
+    >
+        ⬅ Back
+    </button>
+
+    {/* Language Toggle */}
+    <div className="absolute top-4 right-4">
+        <div
+            onClick={() => setLanguage(language === "en" ? "ar" : "en")}
+            className="w-20 h-10 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer transition"
+        >
+            <div
+                className={`w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-md transform transition-transform duration-300 ${language === "ar" ? "translate-x-10" : "translate-x-0"}`}
             >
-                ⬅ Back
-            </button>
-
-            {/* Language Toggle */}
-            <div className="absolute top-4 right-4">
-                <div
-                    onClick={() => setLanguage(language === "en" ? "ar" : "en")}
-                    className="w-20 h-10 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer transition"
-                >
-                    <div
-                        className={`w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-md transform transition-transform duration-300 ${language === "ar" ? "translate-x-10" : "translate-x-0"}`}
-                    >
-                        {language === "en" ? "EN" : "ع"}
-                    </div>
-                </div>
+                {language === "en" ? "EN" : "ع"}
             </div>
+        </div>
+    </div>
 
-            {/* Card */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg w-96">
+    {/* Card */}
+    <div className="bg-white p-8 rounded-2xl shadow-lg w-96">
                 <div className="flex justify-center mb-6">
                     <Image src="/logo.jpg" alt="Logo" width={120} height={120} />
                 </div>
