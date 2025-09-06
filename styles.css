@@ -127,7 +127,7 @@ button:hover {
 
 /* 2025-07-23T12:18:00+05:00: Hide print button while keeping functionality */
 #printBtn {
-    display: none; /* Button is invisible but still exists in DOM for JavaScript */
+   /*  display: none; */ /* Button is invisible but still exists in DOM for JavaScript */
 }
 
 /* Print area styling */
