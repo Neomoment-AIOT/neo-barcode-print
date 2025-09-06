@@ -1,15 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log(`⚡ Updating counter id=${params.id} as served...`);
+    const { id } = await context.params; // ⬅ await is required in Next 15
+    console.log(`⚡ Updating counter id=${id} as served...`);
 
     const updated = await prisma.counter_data.update({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
       data: { Served: true },
     });
 

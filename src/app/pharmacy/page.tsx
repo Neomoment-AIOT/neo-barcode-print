@@ -3,9 +3,16 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+type Counter = {
+  id: number;
+  counter: number;
+};
+
+
 
 export default function Home() {
-  const [counter, setCounter] = useState<any>(null);
+
+  const [counter, setCounter] = useState<Counter | null>(null);
   const [canNext, setCanNext] = useState(false);
   const [language, setLanguage] = useState<"en" | "ar">("en");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -144,13 +151,13 @@ export default function Home() {
           </>
         ) : (
           <>
-  <p className="text-gray-600 mb-6">
-    {t.noData}
-  </p>
-  <div className="flex gap-6 justify-center mt-4">
-    {/* your buttons go here */}
-  </div>
-</>
+            <p className="text-gray-600 mb-6">
+              {t.noData}
+            </p>
+            <div className="flex gap-6 justify-center mt-4">
+              {/* your buttons go here */}
+            </div>
+          </>
 
         )}
       </div>

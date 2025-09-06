@@ -80,19 +80,18 @@ export default function PatientPage() {
     }
     // Helper: create an off-DOM SVG and render barcode into it
     function createBarcodeSvg(value: string | number) {
-        // create proper SVG element namespace (important)
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        // JsBarcode expects a DOM element; cast as any to avoid TS complaints
-        JsBarcode(svg as any, String(value), {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
+        JsBarcode(svg, String(value), {
             format: "CODE128",
             width: 2,
             height: 40,
             displayValue: true,
             fontSize: 10,
-            margin: 5
+            margin: 5,
         });
         return svg;
     }
+
     // inside PatientPage
     useEffect(() => {
         async function fetchLastCounter() {
