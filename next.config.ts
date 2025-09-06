@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // You don’t need appDir anymore
 };
 
 export default nextConfig;
