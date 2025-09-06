@@ -9,6 +9,7 @@ export default function PatientPage() {
     const [iqama, setIqama] = useState("");
     const [prescription, setPrescription] = useState("");
     const [nextQueue, setNextQueue] = useState("Loading...");
+    const [isClient, setIsClient] = useState(false);
 
     // Off-DOM SVG refs (we create SVG elements with createElementNS and never append them)
     const iqamaSvgRef = useRef<SVGElement | null>(null);
@@ -50,7 +51,7 @@ export default function PatientPage() {
     const t = translations[language];
     // helper: generate semi-unique device id
     function generateDeviceId() {
-        if (typeof window === "undefined") return "server";
+        if (!isClient) return "server";
         const key = "deviceId";
         let stored = localStorage.getItem(key);
         if (stored) return stored;
@@ -64,6 +65,11 @@ export default function PatientPage() {
         localStorage.setItem(key, stored);
         return stored;
     }
+
+    // Fix hydration issues by ensuring client-side code runs after mount
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     async function saveToDB(iqamaId: string, prescriptionNumber: string) {
         const res = await fetch("/api/counter/increment", {
