@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model counter_data {
+  id                  Int       @id @default(autoincrement())
+  unique_key          String    @unique @db.VarChar(255)
+  counter             Int
+  iqama_id            String    @db.VarChar(100)
+  prescription_number String    @db.VarChar(100)
+  date                String    @db.VarChar(20)
+  device_id           String?   @db.VarChar(100)
+  timestamp           DateTime? @default(now()) @db.Timestamp(6)
+  Served              Boolean   @default(false)
+}
+
+model metadata {
+  key        String    @id @db.VarChar(50)
+  value      Json
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+}
