@@ -1,22 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    console.log("📡 Fetching today's first unserved counter...");
+    const { searchParams } = new URL(req.url);
+    const pharmacyId = searchParams.get("pharmacyId");
 
-    // Format today's date like "YYYY-MM-DD"
+    if (!pharmacyId) {
+      return NextResponse.json({ error: "pharmacyId is required" }, { status: 400 });
+    }
+
     const today = new Date().toISOString().split("T")[0];
 
     const counter = await prisma.counter_data.findFirst({
       where: {
         Served: false,
-        date: today, // match today's date column
+        date: today,
+        phar_id: parseInt(pharmacyId, 10), // ✅ filter in DB
       },
-      orderBy: { timestamp: "asc" }, // earliest for today
+      orderBy: { timestamp: "asc" },
     });
-
-    console.log("✅ Today's query result:", counter);
 
     return NextResponse.json(counter || null);
   } catch (error) {

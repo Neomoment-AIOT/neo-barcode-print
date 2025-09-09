@@ -3,29 +3,44 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+
 type Counter = {
   id: number;
   counter: number;
+  phar_id: number;
 };
 
-
-
 export default function Home() {
-
   const [counter, setCounter] = useState<Counter | null>(null);
   const [canNext, setCanNext] = useState(false);
   const [language, setLanguage] = useState<"en" | "ar">("en");
+  const [pharmacyId, setPharmacyId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
+  async function markServed(id: number) {
+    await fetch(`/api/counter/${id}`, { method: "PUT" });
+    await fetchCounterJUST();
+    setCanNext(true);
+  }
+  useEffect(() => {
+    const id = localStorage.getItem("pharmacyId");
+    setPharmacyId(id);
+  }, []);
 
   async function fetchCounter() {
-    const res = await fetch("/api/counter", { cache: "no-store" });
-    const data = await res.json();
+    if (!pharmacyId) return;
+
+    setIsLoading(true);
+    const res = await fetch(`/api/counter?pharmacyId=${pharmacyId}`, {
+      cache: "no-store",
+    });
+    const data: Counter | null = await res.json();
 
     if (data) {
       setCounter(data);
       setCanNext(false);
-
+      setIsLoading(false);
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -33,32 +48,39 @@ export default function Home() {
     } else {
       setCounter(null);
       setCanNext(false);
-
+      setIsLoading(false);
       if (!intervalRef.current) {
         intervalRef.current = setInterval(fetchCounter, 5000);
       }
     }
   }
+  async function fetchCounterJUST() {
+    if (!pharmacyId) return;
 
-  async function markServed(id: number) {
-    await fetch(`/api/counter/${id}`, { method: "PUT" });
-
-    const res = await fetch("/api/counter", { cache: "no-store" });
-    const data = await res.json();
+    setIsLoading(true);
+    const res = await fetch(`/api/counter?pharmacyId=${pharmacyId}`, {
+      cache: "no-store",
+    });
+    const data: Counter | null = await res.json();
 
     if (data) {
-      // ✅ Keep showing current served counter, just enable Next
-      setCanNext(true);
+     // setCounter(data);
+      setCanNext(false);
+      setIsLoading(false);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     } else {
-      // ❌ No more unserved → immediately show "No unserved Bar Code"
       setCounter(null);
       setCanNext(false);
-
+      setIsLoading(false);
       if (!intervalRef.current) {
         intervalRef.current = setInterval(fetchCounter, 5000);
       }
     }
   }
+
 
 
   async function handleNext() {
@@ -68,11 +90,10 @@ export default function Home() {
 
   useEffect(() => {
     fetchCounter();
-
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, []);
+  }, [pharmacyId]);
 
   const translations = {
     en: {
@@ -80,6 +101,7 @@ export default function Home() {
       served: "Served",
       next: "Next",
       noData: "No unserved Bar Code",
+      loading: "Loading...",
       back: "← Back",
     },
     ar: {
@@ -87,6 +109,7 @@ export default function Home() {
       served: "تم الخدمة",
       next: "التالي",
       noData: "لا توجد أكواد غير مخدومة",
+      loading: "جارٍ التحميل...",
       back: "← رجوع",
     },
   };
@@ -95,13 +118,22 @@ export default function Home() {
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-100 relative">
+      {/* Pharmacy ID at top center */}
+      {pharmacyId && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg bg-yellow-200 text-gray-800 font-semibold shadow-md">
+          Pharmacy ID: {pharmacyId}
+        </div>
+      )}
+
+      {/* Back button */}
       <button
-        onClick={() => router.push("/")}
+        onClick={() => router.push("/landing")}
         className="absolute top-4 left-4 px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 transition text-sm font-semibold"
       >
         {t.back}
       </button>
 
+      {/* Language toggle */}
       <div className="absolute top-4 right-4">
         <div
           onClick={() => setLanguage(language === "en" ? "ar" : "en")}
@@ -116,13 +148,18 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="bg-white p-8 rounded-2xl shadow-lg text-center w-96">
-        <div className="flex justify-center mb-6">
-          <Image src="/logo.jpg" alt="Company Logo" width={120} height={120} />
-        </div>
-
-        {counter ? (
+      {/* Main card */}
+      <div className="bg-white p-8 rounded-2xl shadow-lg text-center w-96 min-h-[300px] flex flex-col items-center justify-center">
+        {isLoading ? (
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-600 font-medium">{t.loading}</p>
+          </div>
+        ) : counter ? (
           <>
+            <div className="flex justify-center mb-6">
+              <Image src="/logo.jpg" alt="Company Logo" width={120} height={120} />
+            </div>
             <h1 className="text-xl font-bold mb-6">
               {t.counterNumber} {counter.counter}
             </h1>
@@ -151,14 +188,11 @@ export default function Home() {
           </>
         ) : (
           <>
-            <p className="text-gray-600 mb-6">
-              {t.noData}
-            </p>
-            <div className="flex gap-6 justify-center mt-4">
-              {/* your buttons go here */}
+            <div className="flex justify-center mb-6">
+              <Image src="/logo.jpg" alt="Company Logo" width={120} height={120} />
             </div>
+            <p className="text-gray-600 mb-6">{t.noData}</p>
           </>
-
         )}
       </div>
     </div>

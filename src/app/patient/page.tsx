@@ -10,11 +10,15 @@ export default function PatientPage() {
     const [prescription, setPrescription] = useState("");
     const [nextQueue, setNextQueue] = useState("Loading...");
     const [isClient, setIsClient] = useState(false);
-
+    const [pharmacyId, setPharmacyId] = useState<string | null>(null);
     // Off-DOM SVG refs (we create SVG elements with createElementNS and never append them)
     const iqamaSvgRef = useRef<SVGElement | null>(null);
     const prescriptionSvgRef = useRef<SVGElement | null>(null);
-
+    useEffect(() => {
+        setIsClient(true);
+        const id = localStorage.getItem("pharmacyId");
+        setPharmacyId(id);
+    }, []);
     const translations = {
         en: {
             title: "Barcode Printer",
@@ -72,6 +76,8 @@ export default function PatientPage() {
     }, []);
 
     async function saveToDB(iqamaId: string, prescriptionNumber: string) {
+        const pharmacyId = parseInt(localStorage.getItem("pharmacyId") || "0", 10); // ✅ convert to Int
+
         const res = await fetch("/api/counter/increment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -79,11 +85,14 @@ export default function PatientPage() {
                 iqamaId,
                 prescriptionNumber,
                 deviceId: generateDeviceId(),
+                phar_id: pharmacyId, // ✅ Int now
             }),
         });
+
         if (!res.ok) throw new Error("Failed to save");
         return res.json();
     }
+
     // Helper: create an off-DOM SVG and render barcode into it
     function createBarcodeSvg(value: string | number) {
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
@@ -102,13 +111,15 @@ export default function PatientPage() {
     useEffect(() => {
         async function fetchLastCounter() {
             try {
-                const res = await fetch("/api/counter/last", { cache: "no-store" });
+                const pharmacyId = localStorage.getItem("pharmacyId");
+                if (!pharmacyId) return;
+
+                const res = await fetch(`/api/counter/last?pharmacyId=${pharmacyId}`, { cache: "no-store" });
                 const data = await res.json();
 
-                if (data && data.counter) {
+                if (data && typeof data.counter === "number") {
                     setNextQueue(String(data.counter + 1));
                 } else {
-                    // no entry today yet
                     setNextQueue("1");
                 }
             } catch (err) {
@@ -119,6 +130,7 @@ export default function PatientPage() {
 
         fetchLastCounter();
     }, []);
+
 
     // Generate Barcodes off-DOM whenever input changes
     useEffect(() => {
@@ -191,7 +203,7 @@ export default function PatientPage() {
                     margin: 5,
                     fontOptions: 'bold',
                 });
-                
+
                 // Create a temporary div to safely set innerHTML
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = `
@@ -289,12 +301,12 @@ export default function PatientPage() {
             console.log("✅ Saved (PDF):", counterRow);
 
             const doc = new jsPDF({ unit: "mm", format: [57, 80] });
-            
+
             // QUEUE NUMBER SECTION 
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
             doc.text(language === 'en' ? 'Queue Number' : 'رقم الدور', 28.5, 8, { align: 'center' });
-            
+
             doc.setFontSize(20);
             doc.setFont('helvetica', 'bold');
             doc.text(currentQueue, 28.5, 16, { align: 'center' });
@@ -387,47 +399,54 @@ export default function PatientPage() {
             // Save the PDF
             doc.save(`queue-${currentQueue}.pdf`);
 
-    } catch (e) {
-        console.error("Error generating PDF:", e);
-        alert(language === "en" 
-            ? "Error generating PDF. Please try again." 
-            : "خطأ في إنشاء ملف PDF. يرجى المحاولة مرة أخرى.");
-    }
-};
+        } catch (e) {
+            console.error("Error generating PDF:", e);
+            alert(language === "en"
+                ? "Error generating PDF. Please try again."
+                : "خطأ في إنشاء ملف PDF. يرجى المحاولة مرة أخرى.");
+        }
+    };
 
-// Clear inputs
-const handleClear = () => {
-    setIqama("");
-    setPrescription("");
-    setNextQueue(t.loading);
-};
+    // Clear inputs
+    const handleClear = () => {
+        setIqama("");
+        setPrescription("");
+        setNextQueue(t.loading);
+    };
 
-return (
-<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 relative">
-    {/* Back Button */}
-    <button
-        onClick={() => (window.location.href = "/")}
-        className="absolute top-4 left-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition"
-    >
-        ⬅ Back
-    </button>
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 relative">
+            {/* Pharmacy ID at top center */}
+            {pharmacyId && (
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg bg-yellow-200 text-gray-800 font-semibold shadow-md">
+                    Pharmacy ID: {pharmacyId}
+                </div>
+            )}
 
-    {/* Language Toggle */}
-    <div className="absolute top-4 right-4">
-        <div
-            onClick={() => setLanguage(language === "en" ? "ar" : "en")}
-            className="w-20 h-10 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer transition"
-        >
-            <div
-                className={`w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-md transform transition-transform duration-300 ${language === "ar" ? "translate-x-10" : "translate-x-0"}`}
+            {/* Back Button */}
+            <button
+                onClick={() => (window.location.href = "/landing")}
+                className="absolute top-4 left-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition"
             >
-                {language === "en" ? "EN" : "ع"}
-            </div>
-        </div>
-    </div>
+                ⬅ Back
+            </button>
 
-    {/* Card */}
-    <div className="bg-white p-8 rounded-2xl shadow-lg w-96">
+            {/* Language Toggle */}
+            <div className="absolute top-4 right-4">
+                <div
+                    onClick={() => setLanguage(language === "en" ? "ar" : "en")}
+                    className="w-20 h-10 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer transition"
+                >
+                    <div
+                        className={`w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-md transform transition-transform duration-300 ${language === "ar" ? "translate-x-10" : "translate-x-0"}`}
+                    >
+                        {language === "en" ? "EN" : "ع"}
+                    </div>
+                </div>
+            </div>
+
+            {/* Card */}
+            <div className="bg-white p-8 rounded-2xl shadow-lg w-96">
                 <div className="flex justify-center mb-6">
                     <Image src="/logo.jpg" alt="Logo" width={120} height={120} />
                 </div>

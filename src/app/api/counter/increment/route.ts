@@ -10,7 +10,7 @@ function todayDate() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { iqamaId, prescriptionNumber, deviceId } = body;
+    const { iqamaId, prescriptionNumber, deviceId, phar_id } = body; // ✅ include phar_id
 
     if (!iqamaId || !prescriptionNumber) {
       return NextResponse.json(
@@ -19,8 +19,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if already exists for today
     const today = todayDate();
+
     const existing = await prisma.counter_data.findFirst({
       where: {
         iqama_id: iqamaId,
@@ -33,7 +33,6 @@ export async function POST(req: Request) {
       return NextResponse.json(existing);
     }
 
-    // Find today's max counter
     const highestToday = await prisma.counter_data.findFirst({
       where: { date: today },
       orderBy: { counter: "desc" },
@@ -49,9 +48,9 @@ export async function POST(req: Request) {
         prescription_number: prescriptionNumber,
         date: today,
         device_id: deviceId ?? null,
+        phar_id: phar_id ?? 0, // ✅ store in DB
       },
     });
-
 
     return NextResponse.json(newRow);
   } catch (err) {
