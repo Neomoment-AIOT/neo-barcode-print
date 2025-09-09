@@ -17,43 +17,47 @@ export default function Home() {
   const [pharmacyId, setPharmacyId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [isInitialLoading, setIsInitialLoading] = useState(true); // for page load
+  const [isFetching, setIsFetching] = useState(false); // silent fetch
+
   const router = useRouter();
   async function markServed(id: number) {
     await fetch(`/api/counter/${id}`, { method: "PUT" });
-    await fetchCounterJUST();
-    setCanNext(true);
+    setCanNext(true); // enable Next button
   }
+
+  async function handleNext() {
+    setCanNext(false);
+    await fetchCounter(true); // silent fetch, no spinner
+  }
+
   useEffect(() => {
     const id = localStorage.getItem("pharmacyId");
     setPharmacyId(id);
   }, []);
 
-  async function fetchCounter() {
+  async function fetchCounter(silent = false) {
     if (!pharmacyId) return;
 
-    setIsLoading(true);
-    const res = await fetch(`/api/counter?pharmacyId=${pharmacyId}`, {
-      cache: "no-store",
-    });
-    const data: Counter | null = await res.json();
+    if (!silent) setIsInitialLoading(true);
+    if (silent) setIsFetching(true);
 
-    if (data) {
+    try {
+      const res = await fetch(`/api/counter?pharmacyId=${pharmacyId}`, { cache: "no-store" });
+      const data: Counter | null = await res.json();
+
       setCounter(data);
       setCanNext(false);
-      setIsLoading(false);
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    } else {
+    } catch (err) {
+      console.error(err);
       setCounter(null);
-      setCanNext(false);
-      setIsLoading(false);
-      if (!intervalRef.current) {
-        intervalRef.current = setInterval(fetchCounter, 5000);
-      }
+    } finally {
+      if (!silent) setIsInitialLoading(false);
+      if (silent) setIsFetching(false);
     }
   }
+
   async function fetchCounterJUST() {
     if (!pharmacyId) return;
 
@@ -64,7 +68,7 @@ export default function Home() {
     const data: Counter | null = await res.json();
 
     if (data) {
-     // setCounter(data);
+      // setCounter(data);
       setCanNext(false);
       setIsLoading(false);
       if (intervalRef.current) {
@@ -79,13 +83,6 @@ export default function Home() {
         intervalRef.current = setInterval(fetchCounter, 5000);
       }
     }
-  }
-
-
-
-  async function handleNext() {
-    setCanNext(false);
-    await fetchCounter();
   }
 
   useEffect(() => {
@@ -150,7 +147,7 @@ export default function Home() {
 
       {/* Main card */}
       <div className="bg-white p-8 rounded-2xl shadow-lg text-center w-96 min-h-[300px] flex flex-col items-center justify-center">
-        {isLoading ? (
+        {isInitialLoading ? (
           <div className="flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             <p className="text-gray-600 font-medium">{t.loading}</p>
@@ -158,7 +155,7 @@ export default function Home() {
         ) : counter ? (
           <>
             <div className="flex justify-center mb-6">
-              <Image src="/logo.jpg" alt="Company Logo" width={120} height={120} />
+              <Image src="/logo.jpg" alt="Company Logo" width={130} height={130} />
             </div>
             <h1 className="text-xl font-bold mb-6">
               {t.counterNumber} {counter.counter}

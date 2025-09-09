@@ -485,24 +485,28 @@ export default function PatientPage() {
 
                 {/* Buttons */}
                 <div className="flex justify-between mt-6 gap-3">
-                    <button
-                        onClick={handlePrint}
-                        className="flex-1 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 transition"
-                    >
-                        {t.printBtn}
-                    </button>
-                    <button
-                        onClick={handlePdf}
-                        className="flex-1 px-3 py-1.5 rounded-md bg-green-600 text-white text-sm hover:bg-green-700 transition"
-                    >
-                        {t.pdfBtn}
-                    </button>
-                    <button
-                        onClick={handleClear}
-                        className="flex-1 px-3 py-1.5 rounded-md bg-gray-500 text-white text-sm hover:bg-gray-600 transition"
-                    >
-                        {t.clearBtn}
-                    </button>
+                   <button
+    onClick={handlePrint}
+    className="flex-1 px-3 py-1.5 rounded-md bg-blue-600 !text-white text-sm hover:bg-blue-700 hover:!text-white transition"
+>
+    {t.printBtn}
+</button>
+
+<button
+    onClick={handlePdf}
+    className="flex-1 px-3 py-1.5 rounded-md bg-green-600 !text-white text-sm hover:bg-green-700 hover:!text-white transition"
+>
+    {t.pdfBtn}
+</button>
+
+<button
+    onClick={handleClear}
+    className="flex-1 px-3 py-1.5 rounded-md bg-gray-500 !text-white text-sm hover:bg-gray-600 hover:!text-white transition"
+>
+    {t.clearBtn}
+</button>
+
+
                 </div>
 
 
