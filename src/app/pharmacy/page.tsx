@@ -20,7 +20,23 @@ export default function Home() {
 
   const [isInitialLoading, setIsInitialLoading] = useState(true); // for page load
   const [isFetching, setIsFetching] = useState(false); // silent fetch
+  const [time, setTime] = useState("");
 
+  useEffect(() => {
+    function updateTime() {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, "0");
+      const minutes = now.getMinutes().toString().padStart(2, "0");
+      setTime(`${hours}:${minutes}`);
+    }
+
+    updateTime(); // initial call
+    const interval = setInterval(updateTime, 1000 * 60); // update every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const today = new Date().toLocaleDateString(); // e.g., "9/9/2025"
   const router = useRouter();
   async function markServed(id: number) {
     await fetch(`/api/counter/${id}`, { method: "PUT" });
@@ -191,6 +207,9 @@ export default function Home() {
             <p className="text-gray-600 mb-6">{t.noData}</p>
           </>
         )}
+      </div>
+      <div className="fixed bottom-4 right-4 bg-gray-800 !text-white px-3 py-1 rounded shadow-lg font-mono text-sm">
+        {today} {time}
       </div>
     </div>
   );

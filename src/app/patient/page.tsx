@@ -5,6 +5,7 @@ import JsBarcode from "jsbarcode";
 import { jsPDF } from "jspdf";
 
 export default function PatientPage() {
+    const [time, setTime] = useState("");
     const [language, setLanguage] = useState<"en" | "ar">("en");
     const [iqama, setIqama] = useState("");
     const [prescription, setPrescription] = useState("");
@@ -51,6 +52,24 @@ export default function PatientPage() {
             loading: "جارٍ التحميل..."
         }
     };
+
+
+    useEffect(() => {
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, "0");
+            const minutes = now.getMinutes().toString().padStart(2, "0");
+            setTime(`${hours}:${minutes}`);
+        }
+
+        updateTime(); // initial call
+
+        const interval = setInterval(updateTime, 1000); // check every second for minute change
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const today = new Date().toLocaleDateString();
 
     const t = translations[language];
     // helper: generate semi-unique device id
@@ -485,32 +504,35 @@ export default function PatientPage() {
 
                 {/* Buttons */}
                 <div className="flex justify-between mt-6 gap-3">
-                   <button
-    onClick={handlePrint}
-    className="flex-1 px-3 py-1.5 rounded-md bg-blue-600 !text-white text-sm hover:bg-blue-700 hover:!text-white transition"
->
-    {t.printBtn}
-</button>
+                    <button
+                        onClick={handlePrint}
+                        className="flex-1 px-3 py-1.5 rounded-md bg-blue-600 !text-white text-sm hover:bg-blue-700 hover:!text-white transition"
+                    >
+                        {t.printBtn}
+                    </button>
 
-<button
-    onClick={handlePdf}
-    className="flex-1 px-3 py-1.5 rounded-md bg-green-600 !text-white text-sm hover:bg-green-700 hover:!text-white transition"
->
-    {t.pdfBtn}
-</button>
+                    <button
+                        onClick={handlePdf}
+                        className="flex-1 px-3 py-1.5 rounded-md bg-green-600 !text-white text-sm hover:bg-green-700 hover:!text-white transition"
+                    >
+                        {t.pdfBtn}
+                    </button>
 
-<button
-    onClick={handleClear}
-    className="flex-1 px-3 py-1.5 rounded-md bg-gray-500 !text-white text-sm hover:bg-gray-600 hover:!text-white transition"
->
-    {t.clearBtn}
-</button>
+                    <button
+                        onClick={handleClear}
+                        className="flex-1 px-3 py-1.5 rounded-md bg-gray-500 !text-white text-sm hover:bg-gray-600 hover:!text-white transition"
+                    >
+                        {t.clearBtn}
+                    </button>
 
 
                 </div>
 
 
 
+            </div>
+            <div className="fixed bottom-4 right-4 bg-gray-800 !text-white px-3 py-1 rounded shadow-lg font-mono text-sm">
+                {today} {time}
             </div>
         </div>
     );

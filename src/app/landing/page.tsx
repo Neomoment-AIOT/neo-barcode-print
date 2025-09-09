@@ -10,6 +10,24 @@ const poppins = Poppins({
 });
 
 export default function LandingPage() {
+  const [time, setTime] = useState("");
+
+  useEffect(() => {
+    function updateTime() {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, "0");
+      const minutes = now.getMinutes().toString().padStart(2, "0");
+      setTime(`${hours}:${minutes}`);
+    }
+
+    updateTime(); // initial call
+
+    const interval = setInterval(updateTime, 1000); // check every second for minute change
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const today = new Date().toLocaleDateString();
   const router = useRouter();
   const [pharmacyId, setPharmacyId] = useState<string | null>(null);
 
@@ -49,6 +67,9 @@ export default function LandingPage() {
             Pharmacy
           </button>
         </div>
+      </div>
+       <div className="fixed bottom-4 right-4 bg-gray-800 !text-white px-3 py-1 rounded shadow-lg font-mono text-sm">
+        {today} {time}
       </div>
     </div>
   );
