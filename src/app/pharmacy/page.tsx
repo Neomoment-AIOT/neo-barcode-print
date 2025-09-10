@@ -126,14 +126,19 @@ export default function Home() {
       back: "← رجوع",
     },
   };
+  const [pharmacyName, setPharmacyName] = useState<string | null>(null);
 
+  useEffect(() => {
+    const name = localStorage.getItem("pharmacyName");
+    setPharmacyName(name);
+  }, []);
   const t = translations[language];
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-100 relative">
       {/* Top-center pharmacy name */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-gray-800 !text-white rounded-lg font-semibold shadow-lg">
-        {localStorage.getItem("pharmacyName") || "No pharmacy selected"}
+        {pharmacyName || "No pharmacy selected"}
       </div>
 
 

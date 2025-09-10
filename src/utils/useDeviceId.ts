@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 
 // UUID fallback (v4-like)
-function generateUUID() {
+function generateUUID(): string {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
     const r = (Math.random() * 16) | 0;
     const v = c === "x" ? r : (r & 0x3) | 0x8;
@@ -10,22 +10,23 @@ function generateUUID() {
   });
 }
 
-export function useDeviceId() {
+export function useDeviceId(): string | null {
   const [deviceId, setDeviceId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
       let id = localStorage.getItem("deviceId");
       if (!id) {
-        const rndUUID =
-          typeof (globalThis as any).crypto?.randomUUID === "function"
-            ? (globalThis as any).crypto.randomUUID()
-            : generateUUID();
+        // Use crypto.randomUUID if available
+        const rndUUID = typeof crypto?.randomUUID === "function" 
+          ? crypto.randomUUID() 
+          : generateUUID();
         id = rndUUID;
-        localStorage.setItem("deviceId", String(id));
+        localStorage.setItem("deviceId", id);
       }
       setDeviceId(id);
     } catch (err) {
+      console.error(err);
       const id = generateUUID();
       try {
         localStorage.setItem("deviceId", id);

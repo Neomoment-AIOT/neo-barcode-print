@@ -15,6 +15,17 @@ export default function PatientPage() {
     // Off-DOM SVG refs (we create SVG elements with createElementNS and never append them)
     const iqamaSvgRef = useRef<SVGElement | null>(null);
     const prescriptionSvgRef = useRef<SVGElement | null>(null);
+
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    const pharmacyName = isClient ? localStorage.getItem("pharmacyName") : null;
+
+
+
+
     useEffect(() => {
         setIsClient(true);
         const id = localStorage.getItem("pharmacyId");
@@ -437,7 +448,7 @@ export default function PatientPage() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 relative">
             {/* Top-center pharmacy name */}
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-gray-800 !text-white rounded-lg font-semibold shadow-lg">
-                {localStorage.getItem("pharmacyName") || "No pharmacy selected"}
+                {pharmacyName || "No pharmacy selected"}
             </div>
 
             {/* Back Button */}

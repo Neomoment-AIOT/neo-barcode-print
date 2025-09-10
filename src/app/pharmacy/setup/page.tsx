@@ -8,11 +8,19 @@ const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
+interface Pharmacy {
+  id: number;
+  phar_id: string;
+  pharmacy_name: string;
+  address?: string;
+  functional: boolean;
+}
 
 export default function PharmacyRegister() {
   const [time, setTime] = useState("");
   const [deviceId, setDeviceId] = useState<string>("");
-  const [pharmacies, setPharmacies] = useState<any[]>([]); // pharmacy list
+  const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
+
   const [formData, setFormData] = useState({
     pharmacy_name: "",
     geo_location: "",
@@ -37,15 +45,16 @@ export default function PharmacyRegister() {
   useEffect(() => {
     async function fetchPharmacies() {
       try {
-        const res = await fetch("/api/pharmacies"); // you’ll need to create this route
+        const res = await fetch("/api/pharmacies");
         if (res.ok) {
-          const data = await res.json();
+          const data: Pharmacy[] = await res.json();
           setPharmacies(data);
         }
       } catch (err) {
         console.error("Error fetching pharmacies", err);
       }
     }
+
     fetchPharmacies();
   }, []);
 
@@ -78,22 +87,27 @@ export default function PharmacyRegister() {
     try {
       let id = localStorage.getItem("deviceId");
       if (!id) {
+        // Use crypto.randomUUID if available
         const rndUUID =
-          typeof (globalThis as any).crypto?.randomUUID === "function"
-            ? (globalThis as any).crypto.randomUUID()
+          typeof crypto?.randomUUID === "function"
+            ? crypto.randomUUID()
             : generateUUID();
         id = rndUUID;
-        localStorage.setItem("deviceId", String(id));
+        localStorage.setItem("deviceId", id);
       }
-      setDeviceId(String(id));
+      setDeviceId(id);
     } catch (err) {
+      console.error(err);
       const id = generateUUID();
       try {
         localStorage.setItem("deviceId", id);
-      } catch { }
+      } catch {
+        // fail silently
+      }
       setDeviceId(id);
     }
   }, []);
+
 
   const today = new Date().toLocaleDateString();
 
@@ -247,43 +261,43 @@ export default function PharmacyRegister() {
               <p className="text-gray-500">No pharmacies registered yet.</p>
             ) : (
               pharmacies.map((pharmacy) => (
-               <div
-  key={pharmacy.id}
-  className="flex items-center justify-between p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition"
->
-  {/* Left side */}
-  <div className="flex flex-col w-2/3">
-    <span className="font-medium text-gray-800 text-sm">
-      {pharmacy.pharmacy_name}
-    </span>
+                <div
+                  key={pharmacy.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition"
+                >
+                  {/* Left side */}
+                  <div className="flex flex-col w-2/3">
+                    <span className="font-medium text-gray-800 text-sm">
+                      {pharmacy.pharmacy_name}
+                    </span>
 
-    {/* Address with truncate & click */}
-    <span
-     /*  onClick={() => alert(pharmacy.address || "No address provided")} */
-      className="text-xs text-gray-500 "
-    >
-      {pharmacy.address && pharmacy.address.length > 1000
-        ? pharmacy.address.substring(0, 1000) + "..."
-        : pharmacy.address || "No address"}
-    </span>
-  </div>
+                    {/* Address with truncate & click */}
+                    <span
+                      /*  onClick={() => alert(pharmacy.address || "No address provided")} */
+                      className="text-xs text-gray-500 "
+                    >
+                      {pharmacy.address && pharmacy.address.length > 1000
+                        ? pharmacy.address.substring(0, 1000) + "..."
+                        : pharmacy.address || "No address"}
+                    </span>
+                  </div>
 
-  {/* Right side */}
-  <div className="flex flex-col items-end gap-1 w-1/3">
-    <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded whitespace-nowrap">
-      ID: {pharmacy.phar_id}
-    </span>
-    {pharmacy.functional ? (
-      <span className="text-[10px] font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded whitespace-nowrap">
-        ✔ Functional
-      </span>
-    ) : (
-      <span className="text-[10px] font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded whitespace-nowrap">
-        ✘ Not Functional
-      </span>
-    )}
-  </div>
-</div>
+                  {/* Right side */}
+                  <div className="flex flex-col items-end gap-1 w-1/3">
+                    <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded whitespace-nowrap">
+                      ID: {pharmacy.phar_id}
+                    </span>
+                    {pharmacy.functional ? (
+                      <span className="text-[10px] font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded whitespace-nowrap">
+                        ✔ Functional
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded whitespace-nowrap">
+                        ✘ Not Functional
+                      </span>
+                    )}
+                  </div>
+                </div>
 
 
               ))
