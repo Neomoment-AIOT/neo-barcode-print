@@ -28,6 +28,19 @@ model metadata {
 }
 
 model pharmacy_id_table {
-  id      Int  @id @default(autoincrement())
-  phar_id Int?
+  id        Int     @id @default(autoincrement())
+  phar_id   Int?
+  device_id String? @db.VarChar(255)
+}
+
+model pharmacy {
+  id             Int       @id @default(autoincrement())
+  phar_id        Int       @unique
+  pharmacy_name  String    @db.VarChar(255)
+  geo_location   String?   @db.VarChar(255)
+  address        String?   @db.VarChar(255)
+  contact_name   String?   @db.VarChar(255)
+  contact_number String?   @db.VarChar(50)
+  functional     Boolean?  @default(false)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
 }
