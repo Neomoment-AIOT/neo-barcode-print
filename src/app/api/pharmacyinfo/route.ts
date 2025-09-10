@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       data: {
         phar_id: newPharId,
         device_id: device_id ?? null,
+        phar_name: pharmacy_name
       },
     });
 

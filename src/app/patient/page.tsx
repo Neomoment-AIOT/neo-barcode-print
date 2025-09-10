@@ -435,16 +435,14 @@ export default function PatientPage() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 relative">
-            {/* Pharmacy ID at top center */}
-            {pharmacyId && (
-                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg bg-yellow-200 text-gray-800 font-semibold shadow-md">
-                    Pharmacy ID: {pharmacyId}
-                </div>
-            )}
+            {/* Top-center pharmacy name */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-gray-800 !text-white rounded-lg font-semibold shadow-lg">
+                {localStorage.getItem("pharmacyName") || "No pharmacy selected"}
+            </div>
 
             {/* Back Button */}
             <button
-                onClick={() => (window.location.href = "/landing")}
+                onClick={() => (window.location.href = "/")}
                 className="absolute top-4 left-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition"
             >
                 ⬅ Back

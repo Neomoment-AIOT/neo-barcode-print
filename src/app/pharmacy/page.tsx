@@ -131,16 +131,15 @@ export default function Home() {
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-100 relative">
-      {/* Pharmacy ID at top center */}
-      {pharmacyId && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg bg-yellow-200 text-gray-800 font-semibold shadow-md">
-          Pharmacy ID: {pharmacyId}
-        </div>
-      )}
+      {/* Top-center pharmacy name */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-gray-800 !text-white rounded-lg font-semibold shadow-lg">
+        {localStorage.getItem("pharmacyName") || "No pharmacy selected"}
+      </div>
+
 
       {/* Back button */}
       <button
-        onClick={() => router.push("/landing")}
+        onClick={() => router.push("/")}
         className="absolute top-4 left-4 px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 transition text-sm font-semibold"
       >
         {t.back}
