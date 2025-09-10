@@ -57,18 +57,19 @@ export default function PharmacyRegister() {
       return v.toString(16);
     });
   }
-  useEffect(() => {
-    async function fetchPharmacies() {
-      try {
-        const res = await fetch("/api/pharmacies");
-        if (res.ok) {
-          const data = await res.json();
-          setPharmacies(data);
-        }
-      } catch (err) {
-        console.error("Error fetching pharmacies", err);
+  async function fetchPharmacies() {
+    try {
+      const res = await fetch("/api/pharmacies");
+      if (res.ok) {
+        const data = await res.json();
+        setPharmacies(data);
       }
+    } catch (err) {
+      console.error("Error fetching pharmacies", err);
     }
+  }
+
+  useEffect(() => {
     fetchPharmacies();
   }, []);
 
@@ -132,7 +133,7 @@ export default function PharmacyRegister() {
 
 
 
-        
+
         toast.success("Pharmacy registered successfully!");
         setFormData({
           pharmacy_name: "",
@@ -142,7 +143,7 @@ export default function PharmacyRegister() {
           contact_number: "",
           functional: false,
 
-          
+
         });
       } else {
         toast.error("Failed to register pharmacy.");
@@ -151,6 +152,8 @@ export default function PharmacyRegister() {
       console.error(error);
       toast.error("Something went wrong.");
     }
+    await fetchPharmacies(); // refresh the list without reloading page
+
   };
 
   return (
@@ -232,61 +235,66 @@ export default function PharmacyRegister() {
         </div>
       </div>
 
-{/* Right: Pharmacy list */}
-<div className="flex-1 flex items-center justify-center p-8">
-  <div className="bg-white w-full h-full rounded-2xl shadow-lg p-6 overflow-y-auto">
-    <h2 className="text-xl font-semibold mb-6 border-b pb-2">
-      Registered Pharmacies
-    </h2>
+      {/* Right: Pharmacy list */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="bg-white w-full h-full rounded-2xl shadow-lg p-6 overflow-y-auto">
+          <h2 className="text-xl font-semibold mb-6 border-b pb-2">
+            Registered Pharmacies
+          </h2>
 
-    <div className="grid gap-6">
-      {pharmacies.length === 0 ? (
-        <p className="text-gray-500">No pharmacies registered yet.</p>
-      ) : (
-        pharmacies.map((pharmacy) => (
-          <div
-            key={pharmacy.id}
-            className="rounded-xl bg-white shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5"
-          >
-            <div className="p-5 flex flex-col gap-3">
-              {/* Top Row */}
-              <div className="flex justify-between items-start">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  {pharmacy.pharmacy_name}
-                </h3>
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                  ID: {pharmacy.phar_id}
-                </span>
-              </div>
+          <div className="grid gap-6">
+            {pharmacies.length === 0 ? (
+              <p className="text-gray-500">No pharmacies registered yet.</p>
+            ) : (
+              pharmacies.map((pharmacy) => (
+               <div
+  key={pharmacy.id}
+  className="flex items-center justify-between p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition"
+>
+  {/* Left side */}
+  <div className="flex flex-col w-2/3">
+    <span className="font-medium text-gray-800 text-sm">
+      {pharmacy.pharmacy_name}
+    </span>
 
-              {/* Address */}
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {pharmacy.address || "No address provided"}
-              </p>
+    {/* Address with truncate & click */}
+    <span
+     /*  onClick={() => alert(pharmacy.address || "No address provided")} */
+      className="text-xs text-gray-500 "
+    >
+      {pharmacy.address && pharmacy.address.length > 1000
+        ? pharmacy.address.substring(0, 1000) + "..."
+        : pharmacy.address || "No address"}
+    </span>
+  </div>
 
-              {/* Functional status */}
-              <div className="mt-2">
-                {pharmacy.functional ? (
-                  <span className="inline-flex items-center text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded-full">
-                    Functional
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center text-xs font-medium text-red-700 bg-red-100 px-2 py-1 rounded-full">
-                    Not Functional
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        ))
-      )}
-    </div>
+  {/* Right side */}
+  <div className="flex flex-col items-end gap-1 w-1/3">
+    <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded whitespace-nowrap">
+      ID: {pharmacy.phar_id}
+    </span>
+    {pharmacy.functional ? (
+      <span className="text-[10px] font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded whitespace-nowrap">
+        ✔ Functional
+      </span>
+    ) : (
+      <span className="text-[10px] font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded whitespace-nowrap">
+        ✘ Not Functional
+      </span>
+    )}
   </div>
 </div>
 
 
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+
       {/* Date + Time */}
-    {/*   <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-3 py-1 rounded shadow-lg font-mono text-sm">
+      {/*   <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-3 py-1 rounded shadow-lg font-mono text-sm">
         {today} {time}
       </div> */}
     </div>
