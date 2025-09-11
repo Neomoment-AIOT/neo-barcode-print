@@ -14,6 +14,7 @@ interface Pharmacy {
 export default function PharmacySelector() {
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState<Pharmacy | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch pharmacies from API
   useEffect(() => {
@@ -32,6 +33,10 @@ export default function PharmacySelector() {
   }, []);
 
   const handleSelect = (pharmacy: Pharmacy) => {
+    if (!pharmacy.functional) {
+      toast.error("This pharmacy is not Active by admin");
+      return;
+    }
     setSelectedPharmacy(pharmacy);
   };
 
@@ -43,6 +48,11 @@ export default function PharmacySelector() {
 
     toast.success("Linked selected pharmacy!");
   };
+
+  // 🔎 Filtered list
+  const filteredPharmacies = pharmacies.filter((p) =>
+    p.pharmacy_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="relative flex flex-col bg-white w-full h-full rounded-2xl shadow-lg p-6 overflow-y-auto">
@@ -62,7 +72,7 @@ export default function PharmacySelector() {
           disabled={!selectedPharmacy}
           className={`px-4 py-2 rounded-lg font-semibold transition ${
             selectedPharmacy
-              ? "bg-blue-500 hover:bg-blue-600 text-white"
+              ? "bg-blue-500 hover:bg-blue-600 !text-white"
               : "bg-gray-300 text-gray-600 cursor-not-allowed"
           }`}
         >
@@ -70,28 +80,45 @@ export default function PharmacySelector() {
         </button>
       </div>
 
-      <h2 className="text-xl font-semibold mb-4 border-b pb-2">
+      <h2 className="text-xl font-semibold mb-2 border-b pb-2">
         Registered Pharmacies
       </h2>
 
+      {/* 🔎 Search Bar */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search pharmacy..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
       <div className="grid gap-4">
-        {pharmacies.length === 0 ? (
-          <p className="text-gray-500">No pharmacies registered yet.</p>
+        {filteredPharmacies.length === 0 ? (
+          <p className="text-gray-500">No pharmacies found.</p>
         ) : (
-          pharmacies.map((pharmacy) => {
+          filteredPharmacies.map((pharmacy) => {
             const isSelected = selectedPharmacy?.phar_id === pharmacy.phar_id;
             return (
               <div
                 key={pharmacy.id}
                 onClick={() => handleSelect(pharmacy)}
                 className={`flex items-center justify-between p-3 rounded-lg shadow-sm transition cursor-pointer ${
-                  isSelected ? "bg-blue-100 border border-blue-400" : "bg-white hover:shadow-md"
+                  isSelected
+                    ? "bg-blue-100 border border-blue-400"
+                    : "bg-white hover:shadow-md"
                 }`}
               >
                 {/* Left: Name & Address */}
                 <div className="flex flex-col w-2/3">
-                  <span className="font-medium text-gray-800 text-sm">{pharmacy.pharmacy_name}</span>
-                  <span className="text-xs text-gray-500">{pharmacy.address || "No address"}</span>
+                  <span className="font-medium text-gray-800 text-sm">
+                    {pharmacy.pharmacy_name}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {pharmacy.address || "No address"}
+                  </span>
                 </div>
 
                 {/* Right: Info */}

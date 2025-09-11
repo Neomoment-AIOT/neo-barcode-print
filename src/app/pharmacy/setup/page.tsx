@@ -3,23 +3,29 @@ import { useState, useEffect } from "react";
 import { Poppins } from "next/font/google";
 import Image from "next/image";
 import { toast, Toaster } from "react-hot-toast";
-
+import { useDeviceId } from "../../../utils/useDeviceId";
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
+
 interface Pharmacy {
   id: number;
   phar_id: string;
   pharmacy_name: string;
   address?: string;
   functional: boolean;
+  geo_location?: string;
+  contact_name?: string;
+  contact_number?: string;
 }
 
 export default function PharmacyRegister() {
   const [time, setTime] = useState("");
-  const [deviceId, setDeviceId] = useState<string>("");
+  const deviceId = useDeviceId();
+
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
+  const [selectedPharmacyId, setSelectedPharmacyId] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
     pharmacy_name: "",
@@ -41,31 +47,6 @@ export default function PharmacyRegister() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch pharmacies from API
-  useEffect(() => {
-    async function fetchPharmacies() {
-      try {
-        const res = await fetch("/api/pharmacies");
-        if (res.ok) {
-          const data: Pharmacy[] = await res.json();
-          setPharmacies(data);
-        }
-      } catch (err) {
-        console.error("Error fetching pharmacies", err);
-      }
-    }
-
-    fetchPharmacies();
-  }, []);
-
-  // UUID fallback (v4-like)
-  function generateUUID() {
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-      const r = (Math.random() * 16) | 0;
-      const v = c === "x" ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
-  }
   async function fetchPharmacies() {
     try {
       const res = await fetch("/api/pharmacies");
@@ -79,75 +60,36 @@ export default function PharmacyRegister() {
   }
 
   useEffect(() => {
+
     fetchPharmacies();
   }, []);
+
   const handleDelete = async (id: number, name: string, pharId: string) => {
-  if (!confirm("Are you sure you want to delete this pharmacy?")) return;
+    if (!confirm("Are you sure you want to delete this pharmacy?")) return;
 
-  try {
-    const res = await fetch(`/api/pharmacies/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ phar_id: pharId }), // send pharId in body
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      toast.success("Pharmacy deleted successfully!");
-
-      // Clear localStorage if it contains deleted pharmacy
-      const storedName = localStorage.getItem("pharmacyName");
-      const storedId = localStorage.getItem("pharmacyId");
-      if (storedName === name || storedId === pharId) {
-        localStorage.removeItem("pharmacyName");
-        localStorage.removeItem("pharmacyId");
-      }
-
-      // Refresh the list
-      fetchPharmacies();
-    } else {
-      toast.error(data.error || "Failed to delete pharmacy.");
-    }
-  } catch (err) {
-    console.error(err);
-    toast.error("Something went wrong.");
-  }
-};
-
-
-  // Generate/read deviceId
-  useEffect(() => {
     try {
-      let id = localStorage.getItem("deviceId");
-      if (!id) {
-        // Use crypto.randomUUID if available
-        const rndUUID =
-          typeof crypto?.randomUUID === "function"
-            ? crypto.randomUUID()
-            : generateUUID();
-        id = rndUUID;
-        localStorage.setItem("deviceId", id);
+      const res = await fetch(`/api/pharmacies/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phar_id: pharId }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success("Pharmacy deleted successfully!");
+        fetchPharmacies();
+      } else {
+        toast.error(data.error || "Failed to delete pharmacy.");
       }
-      setDeviceId(id);
     } catch (err) {
       console.error(err);
-      const id = generateUUID();
-      try {
-        localStorage.setItem("deviceId", id);
-      } catch {
-        // fail silently
-      }
-      setDeviceId(id);
+      toast.error("Something went wrong.");
     }
-  }, []);
-
+  };
 
   const today = new Date().toLocaleDateString();
 
-  // Form change handler
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -155,15 +97,14 @@ export default function PharmacyRegister() {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const finalDeviceId = deviceId || generateUUID();
+  // Filter pharmacies
+  const filteredPharmacies = pharmacies.filter((p) =>
+    p.pharmacy_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const payload = {
-    ...formData,
-    device_id: finalDeviceId,
-  };
-
-  // Submit handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -173,43 +114,89 @@ export default function PharmacyRegister() {
     }
 
     try {
-      const res = await fetch("/api/pharmacyinfo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      if (selectedPharmacyId) {
+        // UPDATE existing pharmacy
+        const res = await fetch(`/api/pharmaciesupdate/${selectedPharmacyId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+
+        if (res.ok) {
+          toast.success("Pharmacy updated successfully!");
+          // ✅ Clear localStorage if updated pharmacy is the one stored
+          const storedPharmacyId = localStorage.getItem("pharmacyId");
+          if (storedPharmacyId && Number(storedPharmacyId) === selectedPharmacyId) {
+            {
+              localStorage.removeItem("pharmacyId");
+              localStorage.removeItem("pharmacyName");
+            }
+          }
+          setSelectedPharmacyId(null);
+
+        } else {
+          toast.error("Failed to update pharmacy.");
+        }
+      } else {
+        // CREATE new pharmacy
+        const res = await fetch("/api/pharmacyinfo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...formData, device_id: deviceId }),
+        });
+
+        if (res.ok) {
+          toast.success("Pharmacy registered successfully!");
+        } else {
+          toast.error("Failed to register pharmacy.");
+        }
+      }
+
+      // Reset form
+      setFormData({
+        pharmacy_name: "",
+        geo_location: "",
+        address: "",
+        contact_name: "",
+        contact_number: "",
+        functional: false,
       });
 
-      if (res.ok) {
-
-
-
-
-        toast.success("Pharmacy registered successfully!");
-        setFormData({
-          pharmacy_name: "",
-          geo_location: "",
-          address: "",
-          contact_name: "",
-          contact_number: "",
-          functional: false,
-
-
-        });
-      } else {
-        toast.error("Failed to register pharmacy.");
-      }
+      fetchPharmacies();
     } catch (error) {
       console.error(error);
       toast.error("Something went wrong.");
     }
-    await fetchPharmacies(); // refresh the list without reloading page
+  };
 
+  const handleUpdateClick = (pharmacy: Pharmacy) => {
+    setSelectedPharmacyId(parseInt(pharmacy.phar_id));
+    setFormData({
+      pharmacy_name: pharmacy.pharmacy_name,
+      geo_location: pharmacy.geo_location || "",
+      address: pharmacy.address || "",
+      contact_name: pharmacy.contact_name || "",
+      contact_number: pharmacy.contact_number || "",
+      functional: pharmacy.functional,
+    });
+  };
+
+  const handleCancel = () => {
+    setSelectedPharmacyId(null);
+    setFormData({
+      pharmacy_name: "",
+      geo_location: "",
+      address: "",
+      contact_name: "",
+      contact_number: "",
+      functional: false,
+    });
+    fetchPharmacies();
   };
 
   return (
-    <div
-      className={`relative flex h-screen bg-gray-100 ${poppins.className}`}
-    >
+    <div className={`relative flex h-screen bg-gray-100 ${poppins.className}`}>
       <Toaster position="top-right" />
 
       {/* Left: Form */}
@@ -218,7 +205,9 @@ export default function PharmacyRegister() {
           <div className="flex justify-center mb-6">
             <Image src="/logo.jpg" alt="Logo" width={100} height={100} />
           </div>
-          <h2 className="text-xl font-semibold mb-4">Register Pharmacy</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            {selectedPharmacyId ? "Update Pharmacy" : "Register Pharmacy"}
+          </h2>
 
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <input
@@ -270,17 +259,25 @@ export default function PharmacyRegister() {
                 onChange={handleChange}
                 className="w-4 h-4 accent-blue-500"
               />
-              Functional
+              Active
             </label>
+
             <button
               type="submit"
               className="px-6 py-2 bg-blue-600 !text-white rounded-lg font-semibold hover:bg-blue-700 transition"
             >
-              Register
+              {selectedPharmacyId ? "Update" : "Register"}
             </button>
-            {/* <div className="text-xs text-gray-500 mt-2 break-words">
-              Device ID: {deviceId || "initializing..."}
-            </div> */}
+
+            {selectedPharmacyId && (
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-6 py-2 bg-gray-400 !text-white rounded-lg font-semibold hover:bg-gray-500 transition"
+              >
+                Cancel
+              </button>
+            )}
           </form>
         </div>
       </div>
@@ -288,29 +285,56 @@ export default function PharmacyRegister() {
       {/* Right: Pharmacy list */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="bg-white w-full h-full rounded-2xl shadow-lg p-6 overflow-y-auto">
-          <h2 className="text-xl font-semibold mb-6 border-b pb-2">
-            Registered Pharmacies
-          </h2>
+          {/* Header with Search */}
+          <div className="flex items-center justify-between mb-6 border-b pb-2">
+            <h2 className="text-xl font-semibold">Registered Pharmacies</h2>
 
+            {/* Search Icon */}
+            <button
+              onClick={() => setShowSearch((prev) => !prev)}
+              className="p-2 rounded-full hover:bg-gray-200 transition"
+            >
+              🔍
+            </button>
+          </div>
+
+          {/* Animated Search Field */}
+          <div
+            className={`transition-all duration-300 overflow-hidden ${showSearch ? "max-h-16 mb-4" : "max-h-0 mb-0"
+              }`}
+          >
+            <input
+              type="text"
+              placeholder="Search pharmacy..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Pharmacy List */}
           <div className="grid gap-6">
-            {pharmacies.length === 0 ? (
-              <p className="text-gray-500">No pharmacies registered yet.</p>
+            {filteredPharmacies.length === 0 ? (
+              <p className="text-gray-500">No pharmacies found.</p>
             ) : (
-              pharmacies.map((pharmacy) => (
+              filteredPharmacies.map((pharmacy) => (
                 <div
                   key={pharmacy.id}
                   className="flex items-center justify-between p-3 rounded-lg bg-white shadow-sm hover:shadow-md transition"
                 >
                   {/* Left side */}
                   <div className="flex flex-col w-2/3">
-                    <span className="font-medium text-gray-800 text-sm">
+                    <span className="font-medium text-gray-800 text-sm flex items-center gap-2">
+                      {pharmacy.functional ? (
+                        <span className="w-3 h-3 rounded-full bg-green-500 flex items-center justify-center text-white text-[8px]">✔</span>
+                      ) : (
+                        <span className="w-3 h-3 rounded-full bg-red-500 flex items-center justify-center text-white text-[8px]">✘</span>
+                      )}
                       {pharmacy.pharmacy_name}
                     </span>
 
                     <span className="text-xs text-gray-500">
-                      {pharmacy.address && pharmacy.address.length > 1000
-                        ? pharmacy.address.substring(0, 1000) + "..."
-                        : pharmacy.address || "No address"}
+                      {pharmacy.address || "No address"}
                     </span>
                   </div>
 
@@ -320,38 +344,29 @@ export default function PharmacyRegister() {
                       ID: {pharmacy.phar_id}
                     </span>
 
-                    {pharmacy.functional ? (
-                      <span className="text-[10px] font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded whitespace-nowrap">
-                        ✔ Functional
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded whitespace-nowrap">
-                        ✘ Not Functional
-                      </span>
-                    )}
-
-                    {/* Delete Button */}
                     <button
-                      onClick={() => handleDelete(pharmacy.id, pharmacy.pharmacy_name, pharmacy.phar_id)}
+                      onClick={() => handleUpdateClick(pharmacy)}
+                      className="text-blue-500 text-xs px-2 py-0.5 bg-blue-100 rounded hover:bg-blue-200"
+                    >
+                      Update
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        handleDelete(pharmacy.id, pharmacy.pharmacy_name, pharmacy.phar_id)
+                      }
                       className="text-red-500 text-xs px-2 py-0.5 bg-red-100 rounded hover:bg-red-200"
                     >
                       Delete
                     </button>
-
                   </div>
                 </div>
-
               ))
             )}
           </div>
         </div>
       </div>
 
-
-      {/* Date + Time */}
-      {/*   <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-3 py-1 rounded shadow-lg font-mono text-sm">
-        {today} {time}
-      </div> */}
     </div>
   );
 }

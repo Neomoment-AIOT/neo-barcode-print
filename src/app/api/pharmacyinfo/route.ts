@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     await prisma.pharmacy_id_table.create({
       data: {
         phar_id: newPharId,
-        device_id: device_id ?? null,
+        device_id: body.device_id ?? null,
         phar_name: pharmacy_name
       },
     });

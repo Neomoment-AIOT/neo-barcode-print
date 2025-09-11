@@ -36,20 +36,43 @@ export default function LandingPage() {
 
   // Load from localStorage or fetch
   useEffect(() => {
-
     const storedId = localStorage.getItem("pharmacyId");
     const storedName = localStorage.getItem("pharmacyName");
+
     if (storedId && storedName) {
-      setPharmacyId(storedId);
-      setPharmacyName(storedName);
-      console.log("✅ Using localStorage values", storedId, storedName);
+      // 🔍 Verify with DB
+      verifyPharmacy(storedId, storedName);
     } else if (deviceId) {
       fetchPharmacyData(deviceId);
     }
-
-
-
   }, [deviceId]);
+
+  async function verifyPharmacy(pharId: string, pharName: string) {
+    try {
+      const res = await fetch(`/api/verifyPharmacy?phar_id=${pharId}&phar_name=${encodeURIComponent(pharName)}`);
+      const data = await res.json();
+
+      if (data.exists) {
+        // ✅ Keep values
+        setPharmacyId(pharId);
+        setPharmacyName(pharName);
+        console.log("✅ Pharmacy verified in DB");
+      } else {
+        // ❌ Clear invalid values
+        localStorage.removeItem("pharmacyId");
+        localStorage.removeItem("pharmacyName");
+        setPharmacyId(null);
+        setPharmacyName(null);
+        console.log("⚠️ Pharmacy not found, cleared localStorage");
+      }
+    } catch (err) {
+      console.error("❌ Error verifying pharmacy", err);
+      localStorage.removeItem("pharmacyId");
+      localStorage.removeItem("pharmacyName");
+      setPharmacyId(null);
+      setPharmacyName(null);
+    }
+  }
 
   async function fetchPharmacyData(deviceId: string) {
     try {
