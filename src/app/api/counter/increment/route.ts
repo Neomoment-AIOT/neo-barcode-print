@@ -32,11 +32,14 @@ export async function POST(req: Request) {
     if (existing) {
       return NextResponse.json(existing);
     }
-
     const highestToday = await prisma.counter_data.findFirst({
-      where: { date: today },
+      where: {
+        date: today,
+        phar_id: phar_id, // filter by pharmacy ID from frontend
+      },
       orderBy: { counter: "desc" },
     });
+
 
     const nextCounter = (highestToday?.counter || 0) + 1;
 

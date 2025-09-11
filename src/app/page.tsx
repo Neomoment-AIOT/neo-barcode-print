@@ -36,9 +36,9 @@ export default function LandingPage() {
 
   // Load from localStorage or fetch
   useEffect(() => {
+
     const storedId = localStorage.getItem("pharmacyId");
     const storedName = localStorage.getItem("pharmacyName");
-
     if (storedId && storedName) {
       setPharmacyId(storedId);
       setPharmacyName(storedName);
@@ -46,6 +46,9 @@ export default function LandingPage() {
     } else if (deviceId) {
       fetchPharmacyData(deviceId);
     }
+
+
+
   }, [deviceId]);
 
   async function fetchPharmacyData(deviceId: string) {
@@ -99,11 +102,10 @@ export default function LandingPage() {
           <button
             onClick={() => router.push("/patient")}
             disabled={isDisabled}
-            className={`px-6 py-3 rounded-lg font-semibold transition ${
-              isDisabled
-                ? "bg-blue-300 cursor-not-allowed !text-white"
-                : "bg-blue-500 hover:bg-blue-600 !text-white"
-            }`}
+            className={`px-6 py-3 rounded-lg font-semibold transition ${isDisabled
+              ? "bg-blue-300 cursor-not-allowed !text-white"
+              : "bg-blue-500 hover:bg-blue-600 !text-white"
+              }`}
           >
             Patient
           </button>
@@ -111,11 +113,10 @@ export default function LandingPage() {
           <button
             onClick={() => router.push("/pharmacy")}
             disabled={isDisabled}
-            className={`px-6 py-3 rounded-lg font-semibold transition ${
-              isDisabled
-                ? "bg-green-300 cursor-not-allowed !text-white"
-                : "bg-green-500 hover:bg-green-600 !text-white"
-            }`}
+            className={`px-6 py-3 rounded-lg font-semibold transition ${isDisabled
+              ? "bg-green-300 cursor-not-allowed !text-white"
+              : "bg-green-500 hover:bg-green-600 !text-white"
+              }`}
           >
             Pharmacy
           </button>

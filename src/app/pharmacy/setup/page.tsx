@@ -81,6 +81,42 @@ export default function PharmacyRegister() {
   useEffect(() => {
     fetchPharmacies();
   }, []);
+  const handleDelete = async (id: number, name: string, pharId: string) => {
+  if (!confirm("Are you sure you want to delete this pharmacy?")) return;
+
+  try {
+    const res = await fetch(`/api/pharmacies/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ phar_id: pharId }), // send pharId in body
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      toast.success("Pharmacy deleted successfully!");
+
+      // Clear localStorage if it contains deleted pharmacy
+      const storedName = localStorage.getItem("pharmacyName");
+      const storedId = localStorage.getItem("pharmacyId");
+      if (storedName === name || storedId === pharId) {
+        localStorage.removeItem("pharmacyName");
+        localStorage.removeItem("pharmacyId");
+      }
+
+      // Refresh the list
+      fetchPharmacies();
+    } else {
+      toast.error(data.error || "Failed to delete pharmacy.");
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("Something went wrong.");
+  }
+};
+
 
   // Generate/read deviceId
   useEffect(() => {
@@ -271,11 +307,7 @@ export default function PharmacyRegister() {
                       {pharmacy.pharmacy_name}
                     </span>
 
-                    {/* Address with truncate & click */}
-                    <span
-                      /*  onClick={() => alert(pharmacy.address || "No address provided")} */
-                      className="text-xs text-gray-500 "
-                    >
+                    <span className="text-xs text-gray-500">
                       {pharmacy.address && pharmacy.address.length > 1000
                         ? pharmacy.address.substring(0, 1000) + "..."
                         : pharmacy.address || "No address"}
@@ -287,6 +319,7 @@ export default function PharmacyRegister() {
                     <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded whitespace-nowrap">
                       ID: {pharmacy.phar_id}
                     </span>
+
                     {pharmacy.functional ? (
                       <span className="text-[10px] font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded whitespace-nowrap">
                         ✔ Functional
@@ -296,9 +329,17 @@ export default function PharmacyRegister() {
                         ✘ Not Functional
                       </span>
                     )}
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => handleDelete(pharmacy.id, pharmacy.pharmacy_name, pharmacy.phar_id)}
+                      className="text-red-500 text-xs px-2 py-0.5 bg-red-100 rounded hover:bg-red-200"
+                    >
+                      Delete
+                    </button>
+
                   </div>
                 </div>
-
 
               ))
             )}
