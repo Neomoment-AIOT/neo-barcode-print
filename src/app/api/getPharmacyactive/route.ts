@@ -1,6 +1,6 @@
-// src/app/api/getPharmacy/route.ts
+// /app/api/getPharmacy/route.ts
 import { NextResponse } from "next/server";
-import {prisma } from "../../lib/prisma";
+import { prisma } from "@/app/lib/prisma";
 
 export async function GET(req: Request) {
   try {
@@ -8,28 +8,19 @@ export async function GET(req: Request) {
     const phar_id = searchParams.get("phar_id");
 
     if (!phar_id) {
-      return NextResponse.json({ success: false, message: "Missing phar_id" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "phar_id missing" });
     }
 
     const pharmacy = await prisma.pharmacy.findUnique({
-      where: { phar_id: Number(phar_id) },
-      select: {
-        phar_id: true,
-        pharmacy_name: true,
-        functional: true,
-      },
+      where: { id: Number(phar_id) },
     });
 
     if (!pharmacy) {
-      return NextResponse.json({ success: false, message: "Pharmacy not found" }, { status: 404 });
+      return NextResponse.json({ success: false, error: "Pharmacy not found" });
     }
 
-    return NextResponse.json({
-      success: true,
-      pharmacy,
-    });
-  } catch (error) {
-    console.error("❌ Error fetching pharmacy:", error);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+    return NextResponse.json({ success: true, pharmacy });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: "Failed to fetch pharmacy" }, { status: 500 });
   }
 }

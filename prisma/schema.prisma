@@ -28,10 +28,11 @@ model metadata {
 }
 
 model pharmacy_id_table {
-  id        Int     @id @default(autoincrement())
-  phar_id   Int?
-  device_id String? @db.VarChar(255)
-  phar_name String? @db.VarChar(255)
+  id         Int      @id @default(autoincrement())
+  phar_id    Int?
+  device_id  String?  @db.VarChar(255)
+  phar_name  String?  @db.VarChar(255)
+  functional Boolean? @default(true)
 }
 
 model pharmacy {

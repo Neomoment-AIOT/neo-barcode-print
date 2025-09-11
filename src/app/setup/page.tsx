@@ -128,11 +128,11 @@ export default function PharmacySelector() {
                   </span>
                   {pharmacy.functional ? (
                     <span className="text-[10px] font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded whitespace-nowrap">
-                      ✔ Functional
+                      ✔ Active
                     </span>
                   ) : (
                     <span className="text-[10px] font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded whitespace-nowrap">
-                      ✘ Not Functional
+                      ✘ Not Active
                     </span>
                   )}
                 </div>

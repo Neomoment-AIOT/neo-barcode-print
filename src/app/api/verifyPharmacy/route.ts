@@ -18,7 +18,11 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.json({ exists: !!record });
+    return NextResponse.json({
+      exists: !!record,
+      functional: record?.functional ?? false,
+    });
+
   } catch (err) {
     console.error("DB error", err);
     return NextResponse.json({ exists: false });

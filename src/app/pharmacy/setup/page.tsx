@@ -77,6 +77,7 @@ export default function PharmacyRegister() {
       const data = await res.json();
 
       if (res.ok) {
+        
         toast.success("Pharmacy deleted successfully!");
         fetchPharmacies();
       } else {

@@ -33,6 +33,23 @@ export default function LandingPage() {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+  // ⬇️ Add this useEffect
+  useEffect(() => {
+    const storedId = localStorage.getItem("pharmacyId");
+    const storedName = localStorage.getItem("pharmacyName");
+
+    if (storedId && storedName) {
+      // Run immediately once
+      verifyPharmacy(storedId, storedName);
+
+      // Run every 5 seconds
+      const interval = setInterval(() => {
+        verifyPharmacy(storedId, storedName);
+      }, 2500);
+
+      return () => clearInterval(interval);
+    }
+  }, [pharmacyId, pharmacyName]);
 
   // Load from localStorage or fetch
   useEffect(() => {
@@ -40,39 +57,43 @@ export default function LandingPage() {
     const storedName = localStorage.getItem("pharmacyName");
 
     if (storedId && storedName) {
+      console.log("✅ Pharmacy exists in pharmacyIdTable");
+
+      setPharmacyId(storedId);
+      setPharmacyName(storedName);
+      console.log("✅ Pharmacy functional and verified");
       // 🔍 Verify with DB
-      verifyPharmacy(storedId, storedName);
+    //  verifyPharmacy(storedId, storedName);
     } else if (deviceId) {
-      fetchPharmacyData(deviceId);
+    //  fetchPharmacyData(deviceId);
     }
   }, [deviceId]);
 
   async function verifyPharmacy(pharId: string, pharName: string) {
     try {
+      // Step 1: Verify in pharmacyIdTable
       const res = await fetch(`/api/verifyPharmacy?phar_id=${pharId}&phar_name=${encodeURIComponent(pharName)}`);
       const data = await res.json();
 
-      if (data.exists) {
-        // ✅ Keep values
+      if (data.exists && data.functional) {
+        console.log("✅ Pharmacy exists in pharmacyIdTable");
+
         setPharmacyId(pharId);
         setPharmacyName(pharName);
-        console.log("✅ Pharmacy verified in DB");
+        console.log("✅ Pharmacy functional and verified");
       } else {
-        // ❌ Clear invalid values
+        // ❌ Not found in pharmacyIdTable
         localStorage.removeItem("pharmacyId");
         localStorage.removeItem("pharmacyName");
         setPharmacyId(null);
         setPharmacyName(null);
-        console.log("⚠️ Pharmacy not found, cleared localStorage");
+        console.log("⚠️ Pharmacy not found in pharmacyIdTable");
       }
     } catch (err) {
-      console.error("❌ Error verifying pharmacy", err);
-      localStorage.removeItem("pharmacyId");
-      localStorage.removeItem("pharmacyName");
-      setPharmacyId(null);
-      setPharmacyName(null);
+    
     }
   }
+
 
   async function fetchPharmacyData(deviceId: string) {
     try {

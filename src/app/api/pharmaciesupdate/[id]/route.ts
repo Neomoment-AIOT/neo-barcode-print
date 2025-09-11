@@ -21,15 +21,18 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     });
     console.log("Updated pharmacy result:", updatedPharmacy);
 
-    // ✅ Update pharmacy_id_table with new name if provided
-    if (body.pharmacy_name) {
+    // ✅ Update pharmacy_id_table with new name + functional
+    if (body.pharmacy_name || body.functional !== undefined) {
       const updatedPharmacyIdTable = await prisma.pharmacy_id_table.updateMany({
         where: { phar_id: Number(params.id) },
-        data: { phar_name: body.pharmacy_name },
+        data: {
+          phar_name: body.pharmacy_name,
+          functional: body.functional, // 👈 also update functional here
+        },
       });
       console.log("Updated pharmacy_id_table result:", updatedPharmacyIdTable);
     } else {
-      console.log("No 'pharmacy_name' provided → skipping pharmacy_id_table update");
+      console.log("No 'pharmacy_name' or 'functional' provided → skipping pharmacy_id_table update");
     }
 
     return NextResponse.json(updatedPharmacy);
