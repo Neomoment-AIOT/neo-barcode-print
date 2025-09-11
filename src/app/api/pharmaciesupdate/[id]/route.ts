@@ -1,15 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const body = await req.json();
-    console.log("Incoming body:", body);
-    console.log("Pharmacy id param:", params.id);
+    const resolvedParams = await params;
+    const id = Number(resolvedParams.id);
 
-    // ✅ Update pharmacy table by phar_id
-    const updatedPharmacy = await prisma.pharmacy.updateMany({
-      where: { phar_id: Number(params.id) },
+    // Update pharmacy table by phar_id
+    const updatedPharmacy = await prisma.pharmacy.update({
+      where: { phar_id: id },
       data: {
         pharmacy_name: body.pharmacy_name,
         geo_location: body.geo_location,
@@ -19,28 +19,21 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         functional: body.functional,
       },
     });
-    console.log("Updated pharmacy result:", updatedPharmacy);
 
-    // ✅ Update pharmacy_id_table with new name + functional
-    if (body.pharmacy_name || body.functional !== undefined) {
-      const updatedPharmacyIdTable = await prisma.pharmacy_id_table.updateMany({
-        where: { phar_id: Number(params.id) },
+    // Update pharmacy_id_table if needed
+    if (body.pharmacy_name != null || body.functional != null) {
+      await prisma.pharmacy_id_table.updateMany({
+        where: { phar_id: id },
         data: {
           phar_name: body.pharmacy_name,
-          functional: body.functional, // 👈 also update functional here
+          functional: body.functional,
         },
       });
-      console.log("Updated pharmacy_id_table result:", updatedPharmacyIdTable);
-    } else {
-      console.log("No 'pharmacy_name' or 'functional' provided → skipping pharmacy_id_table update");
     }
 
     return NextResponse.json(updatedPharmacy);
   } catch (err) {
     console.error("Update pharmacy failed:", err);
-    return NextResponse.json(
-      { error: "Failed to update pharmacy" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update pharmacy" }, { status: 500 });
   }
 }

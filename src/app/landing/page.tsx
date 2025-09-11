@@ -1,13 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Poppins } from "next/font/google";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
 
 export default function LandingPage() {
   const [time, setTime] = useState("");
@@ -51,7 +46,7 @@ export default function LandingPage() {
   const today = new Date().toLocaleDateString();
 
   return (
-    <div className={`relative flex h-screen items-center justify-center bg-gray-100 ${poppins.className}`}>
+    <div className={`relative flex h-screen items-center justify-center bg-gray-100`}>
       <div className="bg-white p-8 rounded-2xl shadow-lg text-center w-96">
         {/* Logo */}
         <div className="flex justify-center mb-6">

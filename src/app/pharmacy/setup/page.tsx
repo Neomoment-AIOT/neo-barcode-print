@@ -1,13 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Poppins } from "next/font/google";
 import Image from "next/image";
 import { toast, Toaster } from "react-hot-toast";
 import { useDeviceId } from "../../../utils/useDeviceId";
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
+
 
 interface Pharmacy {
   id: number;
@@ -68,7 +64,7 @@ export default function PharmacyRegister() {
     if (!confirm("Are you sure you want to delete this pharmacy?")) return;
 
     try {
-      const res = await fetch(`/api/pharmacies/${id}`, {
+      const res = await fetch(`/api/newdelete/deletepharmacy/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phar_id: pharId }),
@@ -197,7 +193,7 @@ export default function PharmacyRegister() {
   };
 
   return (
-    <div className={`relative flex h-screen bg-gray-100 ${poppins.className}`}>
+    <div className={`relative flex h-screen bg-gray-100`}>
       <Toaster position="top-right" />
 
       {/* Left: Form */}

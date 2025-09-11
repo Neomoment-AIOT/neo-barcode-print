@@ -1,15 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Poppins } from "next/font/google";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useDeviceId } from "../utils/useDeviceId";
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
+
 
 export default function LandingPage() {
   const [time, setTime] = useState("");
@@ -130,7 +126,7 @@ export default function LandingPage() {
 
   return (
     <div
-      className={`relative flex h-screen items-center justify-center bg-gray-100 ${poppins.className}`}
+      className={`relative flex h-screen items-center justify-center bg-gray-100`}
     >
       {/* Top-center pharmacy name */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-gray-800 !text-white rounded-lg font-semibold shadow-lg">
