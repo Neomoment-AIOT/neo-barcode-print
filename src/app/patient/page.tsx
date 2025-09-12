@@ -202,11 +202,6 @@ export default function PatientPage() {
     };
 
 
-
-
-
-
-
     const handlePrint = async () => {
         if (!/^\d+$/.test(iqama) || !/^\d+$/.test(prescription)) {
             alert("⚠ Please enter numeric values for both fields.");
@@ -216,73 +211,43 @@ export default function PatientPage() {
         try {
             const counterRow = await saveToDB(iqama, prescription);
             setNextQueue(String(counterRow.counter + 1));
-            console.log("✅ Saved:", counterRow);
 
-            if (!validateInputs()) return; // ⬅ block if invalid
+            if (!validateInputs()) return;
 
-            const printWindow = window.open("", "printWindow", "width=400,height=600");
-            if (printWindow) {
-                // Create a new SVG for the queue number barcode with larger font
-                const queueSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
-                JsBarcode(queueSvg, String(nextQueue), {
-                    format: "CODE128",
-                    width: 2,
-                    height: 50,  // Slightly taller for better visibility
-                    displayValue: true,
-                    fontSize: 14,  // Increased from 10 to 14
-                    margin: 5,
-                    fontOptions: 'bold',
-                });
+            // Create Queue SVG
+            const queueSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
+            JsBarcode(queueSvg, String(counterRow.counter), {
+                format: "CODE128",
+                width: 2,
+                height: 50,
+                displayValue: true,
+                fontSize: 14,
+                margin: 5,
+                fontOptions: "bold",
+            });
 
-                // Create a temporary div to safely set innerHTML
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = `
+            // Full HTML for print page (✅ unchanged)
+            const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
           <title>${t.title}</title>
-          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+          <meta charset="UTF-8">
           <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              text-align: center; 
-              margin: 0;
-              padding: 10px;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-            .barcode-container { 
-              margin: 15px 0;
-              page-break-inside: avoid;
-            }
-            h3 { 
-              margin: 15px 0 5px; 
-              font-size: 16px;
-              font-weight: bold;
-            }
-            .queue-number {
-              font-size: 24px;
-              font-weight: bold;
-              margin: 10px 0;
-            }
+            body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 10px; }
+            .barcode-container { margin: 15px 0; page-break-inside: avoid; }
+            h3 { margin: 15px 0 5px; font-size: 16px; font-weight: bold; }
+            .queue-number { font-size: 24px; font-weight: bold; margin: 10px 0; }
             @media print {
-              @page {
-                size: 57mm 80mm;
-                margin: 0;
-              }
-              body {
-                width: 57mm;
-                height: 80mm;
-                margin: 0 auto;
-                padding: 5mm;
-              }
+              @page { size: 57mm 80mm; margin: 0; }
+              body { width: 57mm; height: 80mm; margin: 0 auto; padding: 5mm; }
             }
           </style>
         </head>
         <body>
           <div class="barcode-container">
             <h3>${language === 'en' ? 'Queue Number' : 'رقم الدور'}</h3>
-            <div class="queue-number">${nextQueue}</div>
+            <div class="queue-number">${counterRow.counter}</div>
             ${queueSvg.outerHTML}
           </div>
           <div class="barcode-container">
@@ -293,29 +258,157 @@ export default function PatientPage() {
             <h3>${t.prescriptionPrintLabel}</h3>
             ${prescriptionSvgRef.current?.outerHTML || ""}
           </div>
-        </body>
-      </html>`;
-
-                // Write the content to the print window
-                printWindow.document.open('text/html', 'replace');
-                printWindow.document.write(tempDiv.innerHTML);
-                printWindow.document.close();
-                printWindow.focus();
-                setTimeout(() => {
-                    printWindow.print();
-                    printWindow.close();
-                }, 2000);
-            } else {
-                alert(language === "en"
-                    ? "Pop-up blocker may be preventing the print window."
-                    : "قد يمنع مانع النوافذ المنبثقة فتح نافذة الطباعة.");
+          <script>
+            window.onload = function() {
+              setTimeout(() => window.print(), 300);
             }
-            // use counterRow.counter if you want to show queue number
+          </script>
+        </body>
+      </html>
+    `;
+
+            // ✅ Detect mobile
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                // 👉 Android/iOS cannot use window.open + print reliably
+                const blob = new Blob([htmlContent], { type: "text/html" });
+                const url = URL.createObjectURL(blob);
+                window.location.href = url; // opens in default viewer → user can print
+            } else {
+                // 👉 Desktop normal flow
+                const printWindow = window.open("", "_blank");
+                if (!printWindow) {
+                    alert(
+                        language === "en"
+                            ? "Pop-up blocker may be preventing the print window."
+                            : "قد يمنع مانع النوافذ المنبثقة فتح نافذة الطباعة."
+                    );
+                    return;
+                }
+                printWindow.document.open();
+                printWindow.document.write(htmlContent);
+                printWindow.document.close();
+            }
         } catch (e) {
             alert("Error saving to database");
             console.error(e);
         }
     };
+
+
+
+    /* 
+    
+        const handlePrint = async () => {
+            if (!/^\d+$/.test(iqama) || !/^\d+$/.test(prescription)) {
+                alert("⚠ Please enter numeric values for both fields.");
+                return;
+            }
+    
+            try {
+                const counterRow = await saveToDB(iqama, prescription);
+                setNextQueue(String(counterRow.counter + 1));
+                console.log("✅ Saved:", counterRow);
+    
+                if (!validateInputs()) return; // ⬅ block if invalid
+    
+                const printWindow = window.open("", "printWindow", "width=400,height=600");
+                if (printWindow) {
+                    // Create a new SVG for the queue number barcode with larger font
+                    const queueSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGSVGElement;
+                    JsBarcode(queueSvg, String(nextQueue), {
+                        format: "CODE128",
+                        width: 2,
+                        height: 50,  // Slightly taller for better visibility
+                        displayValue: true,
+                        fontSize: 14,  // Increased from 10 to 14
+                        margin: 5,
+                        fontOptions: 'bold',
+                    });
+    
+                    // Create a temporary div to safely set innerHTML
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>${t.title}</title>
+              <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+              <style>
+                body { 
+                  font-family: Arial, sans-serif; 
+                  text-align: center; 
+                  margin: 0;
+                  padding: 10px;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+                .barcode-container { 
+                  margin: 15px 0;
+                  page-break-inside: avoid;
+                }
+                h3 { 
+                  margin: 15px 0 5px; 
+                  font-size: 16px;
+                  font-weight: bold;
+                }
+                .queue-number {
+                  font-size: 24px;
+                  font-weight: bold;
+                  margin: 10px 0;
+                }
+                @media print {
+                  @page {
+                    size: 57mm 80mm;
+                    margin: 0;
+                  }
+                  body {
+                    width: 57mm;
+                    height: 80mm;
+                    margin: 0 auto;
+                    padding: 5mm;
+                  }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="barcode-container">
+                <h3>${language === 'en' ? 'Queue Number' : 'رقم الدور'}</h3>
+                <div class="queue-number">${nextQueue}</div>
+                ${queueSvg.outerHTML}
+              </div>
+              <div class="barcode-container">
+                <h3>${t.iqamaPrintLabel}</h3>
+                ${iqamaSvgRef.current?.outerHTML || ""}
+              </div>
+              <div class="barcode-container">
+                <h3>${t.prescriptionPrintLabel}</h3>
+                ${prescriptionSvgRef.current?.outerHTML || ""}
+              </div>
+            </body>
+          </html>`;
+    
+                    // Write the content to the print window
+                    printWindow.document.open('text/html', 'replace');
+                    printWindow.document.write(tempDiv.innerHTML);
+                    printWindow.document.close();
+                    printWindow.focus();
+                    setTimeout(() => {
+                        printWindow.print();
+                        printWindow.close();
+                    }, 2000);
+                } else {
+                    alert(language === "en"
+                        ? "Pop-up blocker may be preventing the print window."
+                        : "قد يمنع مانع النوافذ المنبثقة فتح نافذة الطباعة.");
+                }
+                // use counterRow.counter if you want to show queue number
+            } catch (e) {
+                alert("Error saving to database");
+                console.error(e);
+            }
+        }; */
     /*     // Modify handlePrint
         const handlePrint = () => {
             
