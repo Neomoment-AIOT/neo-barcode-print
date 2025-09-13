@@ -79,23 +79,33 @@ export default function LandingPage() {
   useEffect(() => {
     if (!deviceId || !pharmacyId) return;
 
-    const handleBeforeUnload = () => {
+    const deactivate = () => {
       navigator.sendBeacon(
         "/api/updateActiveCounter",
         JSON.stringify({
           device_id: deviceId,
           phar_id: pharmacyId,
-          status: false, // ❌ deactivate when tab closes
+          status: false,
         })
       );
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    // Works on desktop
+    window.addEventListener("beforeunload", deactivate);
+
+    // Works on mobile
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        deactivate();
+      }
+    });
 
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("beforeunload", deactivate);
+      document.removeEventListener("visibilitychange", deactivate);
     };
   }, [deviceId, pharmacyId]);
+
 
   async function updateCounterState(newState: boolean) {
     if (!pharmacyId || !deviceId) return;
@@ -139,28 +149,32 @@ export default function LandingPage() {
   return (
     <div className="relative flex h-screen items-center justify-center bg-gray-100">
       {/* ✅ Top-center pharmacy name */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-gray-800 !text-white rounded-lg font-semibold shadow-lg">
-        {pharmacyName || "No pharmacy selected"}
-      </div>
+      {/* ✅ Responsive top bar */}
+<div className="absolute top-4 left-0 right-0 px-4 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
+  {/* Pharmacy name */}
+  <div className="px-3 py-2 bg-gray-800 !text-white rounded-lg font-semibold shadow-md text-center sm:text-left w-full sm:w-auto">
+    {pharmacyName || "No pharmacy selected"}
+  </div>
 
-      {/* ✅ Top-right toggle (only if pharmacy is selected) */}
-      {pharmacyId && (
-        <div className="absolute top-4 right-4 flex items-center space-x-3">
-          <span className="text-gray-800 font-semibold">
-            {isCounter ? "Counter" : "Not Counter"}
-          </span>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isCounter}
-              onChange={handleToggle}
-              className="sr-only peer"
-            />
-            <div className="w-14 h-8 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-            <div className="absolute left-1 top-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-6"></div>
-          </label>
-        </div>
-      )}
+  {/* Counter toggle */}
+  {pharmacyId && (
+    <div className="flex items-center space-x-2">
+      <span className="text-gray-800 font-semibold text-sm sm:text-base">
+        {isCounter ? "Counter" : "Not Counter"}
+      </span>
+      <label className="relative inline-flex items-center cursor-pointer">
+        <input
+          type="checkbox"
+          checked={isCounter}
+          onChange={handleToggle}
+          className="sr-only peer"
+        />
+        <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-6"></div>
+      </label>
+    </div>
+  )}
+</div>
 
       <div className="bg-white p-8 rounded-2xl shadow-lg text-center w-96">
         <div className="flex justify-center mb-6">
