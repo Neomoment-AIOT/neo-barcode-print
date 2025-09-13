@@ -50,21 +50,27 @@ export default function TokenMonitorPage() {
   };
 
   // 🔄 Fetch token data every 5s
+  // inside useEffect
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch("/api/token-monitor");
+      const pharmacyId = localStorage.getItem("pharmacyId");
+      if (!pharmacyId) return;
+
+      const res = await fetch(`/api/token-monitor?pharmacyId=${pharmacyId}`);
       const json: TokenData = await res.json();
       setData(json);
     };
+
     fetchData();
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
 
+
   // 🔔 Speak every 2s in selected language
   useEffect(() => {
     if (!data?.currentUnserved?.counter) return;
-    const text =`The current token is ${data.currentUnserved.counter}`;
+    const text = `The current token is ${data.currentUnserved.counter}`;
 
     speak(text);
     const interval = setInterval(() => {
@@ -81,21 +87,21 @@ export default function TokenMonitorPage() {
         }`}
       dir={lang === "ar" ? "rtl" : "ltr"} // 👉 switch text direction
     >
-    {/* 🌍 Language Toggle Switch */}
-<div className="absolute top-4 right-4 flex items-center space-x-3">
-  <label className="relative inline-flex items-center cursor-pointer">
-    <input
-      type="checkbox"
-      className="sr-only peer"
-      checked={lang === "ar"}
-      onChange={() => setLang(lang === "en" ? "ar" : "en")}
-    />
-    <div className="w-14 h-8 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
-    <div className="absolute left-1 top-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-xs font-bold transition-transform peer-checked:translate-x-6">
-      {lang === "en" ? "EN" : "AR"}
-    </div>
-  </label>
-</div>
+      {/* 🌍 Language Toggle Switch */}
+      <div className="absolute top-4 right-4 flex items-center space-x-3">
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            className="sr-only peer"
+            checked={lang === "ar"}
+            onChange={() => setLang(lang === "en" ? "ar" : "en")}
+          />
+          <div className="w-14 h-8 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+          <div className="absolute left-1 top-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-xs font-bold transition-transform peer-checked:translate-x-6">
+            {lang === "en" ? "EN" : "AR"}
+          </div>
+        </label>
+      </div>
 
 
 
