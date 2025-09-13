@@ -76,7 +76,7 @@ export default function LandingPage() {
       console.error(err);
     }
   }
-  useEffect(() => {
+  /* useEffect(() => {
     if (!deviceId || !pharmacyId) return;
 
     const fetchStatus = async () => {
@@ -104,7 +104,7 @@ export default function LandingPage() {
     return () => {
       window.removeEventListener("focus", handleFocus);
     };
-  }, [deviceId, pharmacyId]);
+  }, [deviceId, pharmacyId]); umair */
 
 
   async function updateCounterState(newState: boolean) {
@@ -157,23 +157,7 @@ export default function LandingPage() {
         </div>
 
         {/* Counter toggle */}
-        {pharmacyId && (
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-800 font-semibold text-sm sm:text-base">
-              {isCounter ? "Counter" : "Not Counter"}
-            </span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isCounter}
-                onChange={handleToggle}
-                className="sr-only peer"
-              />
-              <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-              <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-6"></div>
-            </label>
-          </div>
-        )}
+        
       </div>
 
       <div className="bg-white p-8 rounded-2xl shadow-lg text-center w-96">
