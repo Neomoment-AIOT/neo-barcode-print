@@ -5,12 +5,11 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useDeviceId } from "../utils/useDeviceId";
 
-
-
 export default function LandingPage() {
   const [time, setTime] = useState("");
   const [pharmacyId, setPharmacyId] = useState<string | null>(null);
   const [pharmacyName, setPharmacyName] = useState<string | null>(null);
+  const [isCounter, setIsCounter] = useState(false); // ✅ toggle state
   const deviceId = useDeviceId();
   const router = useRouter();
 
@@ -29,83 +28,44 @@ export default function LandingPage() {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
-  // ⬇️ Add this useEffect
+
+  // Pharmacy verify loop
   useEffect(() => {
     const storedId = localStorage.getItem("pharmacyId");
     const storedName = localStorage.getItem("pharmacyName");
 
     if (storedId && storedName) {
-      // Run immediately once
       verifyPharmacy(storedId, storedName);
-
-      // Run every 5 seconds
       const interval = setInterval(() => {
         verifyPharmacy(storedId, storedName);
       }, 2500);
-
       return () => clearInterval(interval);
     }
   }, [pharmacyId, pharmacyName]);
 
-  // Load from localStorage or fetch
   useEffect(() => {
     const storedId = localStorage.getItem("pharmacyId");
     const storedName = localStorage.getItem("pharmacyName");
-
     if (storedId && storedName) {
-      console.log("✅ Pharmacy exists in pharmacyIdTable");
-
       setPharmacyId(storedId);
       setPharmacyName(storedName);
-      console.log("✅ Pharmacy functional and verified");
-      // 🔍 Verify with DB
-    //  verifyPharmacy(storedId, storedName);
     } else if (deviceId) {
-    //  fetchPharmacyData(deviceId);
+      // fetchPharmacyData(deviceId);
     }
   }, [deviceId]);
 
   async function verifyPharmacy(pharId: string, pharName: string) {
     try {
-      // Step 1: Verify in pharmacyIdTable
-      const res = await fetch(`/api/verifyPharmacy?phar_id=${pharId}&phar_name=${encodeURIComponent(pharName)}`);
+      const res = await fetch(
+        `/api/verifyPharmacy?phar_id=${pharId}&phar_name=${encodeURIComponent(
+          pharName
+        )}`
+      );
       const data = await res.json();
 
       if (data.exists && data.functional) {
-        console.log("✅ Pharmacy exists in pharmacyIdTable");
-
         setPharmacyId(pharId);
         setPharmacyName(pharName);
-        console.log("✅ Pharmacy functional and verified");
-      } else {
-        // ❌ Not found in pharmacyIdTable
-        localStorage.removeItem("pharmacyId");
-        localStorage.removeItem("pharmacyName");
-        setPharmacyId(null);
-        setPharmacyName(null);
-        console.log("⚠️ Pharmacy not found in pharmacyIdTable");
-      }
-    } catch (err) {
-    
-    }
-  }
-
-
-  async function fetchPharmacyData(deviceId: string) {
-    try {
-      const res = await fetch(`/api/getPharmacyId?deviceId=${deviceId}`);
-      const data = await res.json();
-      console.log("🌐 Fetched pharmacy data:", data);
-
-      if (data.success && data.phar_id && data.phar_name) {
-        const pharIdStr = data.phar_id.toString();
-        localStorage.setItem("pharmacyId", pharIdStr);
-        localStorage.setItem("pharmacyName", data.phar_name);
-
-        setPharmacyId(pharIdStr);
-        setPharmacyName(data.phar_name);
-
-        console.log("✅ State updated, buttons enabled, name shown");
       } else {
         localStorage.removeItem("pharmacyId");
         localStorage.removeItem("pharmacyName");
@@ -113,25 +73,94 @@ export default function LandingPage() {
         setPharmacyName(null);
       }
     } catch (err) {
-      console.error("❌ Error fetching pharmacy data", err);
-      localStorage.removeItem("pharmacyId");
-      localStorage.removeItem("pharmacyName");
-      setPharmacyId(null);
-      setPharmacyName(null);
+      console.error(err);
     }
   }
+  useEffect(() => {
+    if (!deviceId || !pharmacyId) return;
+
+    const handleBeforeUnload = () => {
+      navigator.sendBeacon(
+        "/api/updateActiveCounter",
+        JSON.stringify({
+          device_id: deviceId,
+          phar_id: pharmacyId,
+          status: false, // ❌ deactivate when tab closes
+        })
+      );
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [deviceId, pharmacyId]);
+
+  async function updateCounterState(newState: boolean) {
+    if (!pharmacyId || !deviceId) return;
+
+    const res = await fetch("/api/updateActiveCounter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        device_id: deviceId,
+        phar_id: pharmacyId,
+        status: newState, // 👈 send status to backend
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      if (data.status) {
+        // ✅ Active counter: show counter index
+        alert(`This device is Counter #${data.counter_index}`);
+      } else {
+        // ❌ Inactive counter
+        alert("This counter has been deactivated");
+      }
+    } else {
+      alert(`Error: ${data.error || "Unknown error"}`);
+    }
+  }
+
+
+  // When toggle is changed
+  const handleToggle = () => {
+    const newState = !isCounter;
+    setIsCounter(newState);
+    updateCounterState(newState);
+  };
 
   const isDisabled = !pharmacyId;
   const today = new Date().toLocaleDateString();
 
   return (
-    <div
-      className={`relative flex h-screen items-center justify-center bg-gray-100`}
-    >
-      {/* Top-center pharmacy name */}
+    <div className="relative flex h-screen items-center justify-center bg-gray-100">
+      {/* ✅ Top-center pharmacy name */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-gray-800 !text-white rounded-lg font-semibold shadow-lg">
         {pharmacyName || "No pharmacy selected"}
       </div>
+
+      {/* ✅ Top-right toggle (only if pharmacy is selected) */}
+      {pharmacyId && (
+        <div className="absolute top-4 right-4 flex items-center space-x-3">
+          <span className="text-gray-800 font-semibold">
+            {isCounter ? "Counter" : "Not Counter"}
+          </span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isCounter}
+              onChange={handleToggle}
+              className="sr-only peer"
+            />
+            <div className="w-14 h-8 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+            <div className="absolute left-1 top-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-6"></div>
+          </label>
+        </div>
+      )}
 
       <div className="bg-white p-8 rounded-2xl shadow-lg text-center w-96">
         <div className="flex justify-center mb-6">
@@ -160,6 +189,7 @@ export default function LandingPage() {
           >
             Pharmacy
           </button>
+
           <button
             onClick={() => router.push("/tokenmoniter")}
             disabled={isDisabled}
@@ -177,10 +207,10 @@ export default function LandingPage() {
           >
             Setup
           </button>
-          
         </div>
       </div>
 
+      {/* Bottom clock */}
       <div className="fixed bottom-4 right-4 bg-gray-800 !text-white px-3 py-1 rounded shadow-lg font-mono text-sm">
         {today} {time}
       </div>
