@@ -14,6 +14,7 @@ interface Pharmacy {
   geo_location?: string;
   contact_name?: string;
   contact_number?: string;
+  number_of_counters?: number;
 }
 
 export default function PharmacyRegister() {
@@ -22,7 +23,6 @@ export default function PharmacyRegister() {
 
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [selectedPharmacyId, setSelectedPharmacyId] = useState<number | null>(null);
-
   const [formData, setFormData] = useState({
     pharmacy_name: "",
     geo_location: "",
@@ -30,7 +30,9 @@ export default function PharmacyRegister() {
     contact_name: "",
     contact_number: "",
     functional: false,
+    number_of_counters: "" as string | number,  // 👈 empty by default
   });
+
 
   // Clock
   useEffect(() => {
@@ -73,7 +75,7 @@ export default function PharmacyRegister() {
       const data = await res.json();
 
       if (res.ok) {
-        
+
         toast.success("Pharmacy deleted successfully!");
         fetchPharmacies();
       } else {
@@ -158,6 +160,7 @@ export default function PharmacyRegister() {
         contact_name: "",
         contact_number: "",
         functional: false,
+        number_of_counters: 1
       });
 
       fetchPharmacies();
@@ -176,8 +179,10 @@ export default function PharmacyRegister() {
       contact_name: pharmacy.contact_name || "",
       contact_number: pharmacy.contact_number || "",
       functional: pharmacy.functional,
+      number_of_counters: pharmacy.number_of_counters ?? 1, // ✅ default to 1 if undefined
     });
   };
+
 
   const handleCancel = () => {
     setSelectedPharmacyId(null);
@@ -188,6 +193,7 @@ export default function PharmacyRegister() {
       contact_name: "",
       contact_number: "",
       functional: false,
+      number_of_counters: 1,
     });
     fetchPharmacies();
   };
@@ -248,6 +254,15 @@ export default function PharmacyRegister() {
               onChange={handleChange}
               className="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <input
+              type="number"
+              name="number_of_counters"
+              placeholder="Number of Counters"
+              value={formData.number_of_counters}
+              onChange={handleChange}
+              className="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"

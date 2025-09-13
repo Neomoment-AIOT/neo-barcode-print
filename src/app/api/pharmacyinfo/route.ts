@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
       contact_number,
       functional,
       device_id,
+      number_of_counters, // may come as string
     } = body;
 
     if (!pharmacy_name) {
@@ -27,6 +28,11 @@ export async function POST(req: NextRequest) {
     });
     const newPharId = (lastPharmacy?.phar_id ?? 0) + 1;
 
+    // Ensure number_of_counters is an integer
+    const counters = number_of_counters
+      ? parseInt(number_of_counters, 10)
+      : 1;
+
     // Insert into pharmacy
     const pharmacy = await prisma.pharmacy.create({
       data: {
@@ -37,6 +43,7 @@ export async function POST(req: NextRequest) {
         contact_name,
         contact_number,
         functional,
+        number_of_counters: counters,
       },
     });
 
@@ -44,9 +51,9 @@ export async function POST(req: NextRequest) {
     await prisma.pharmacy_id_table.create({
       data: {
         phar_id: newPharId,
-        device_id: body.device_id ?? null,
+        device_id: device_id ?? null,
         phar_name: pharmacy_name,
-        functional:pharmacy.functional
+        functional: pharmacy.functional,
       },
     });
 
