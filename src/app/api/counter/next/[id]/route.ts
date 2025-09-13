@@ -6,22 +6,20 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // ⬅ await is required in Next 15
-    console.log(`⚡ Updating counter id=${id} as served...`);
+    const { id } = await context.params;
+    console.log(`⚡ Updating counter id=${id} with next_time...`);
 
+    const now = new Date();
     const updated = await prisma.counter_data.update({
       where: { id: Number(id) },
-      data: { 
-        Served: true,
-        served_time: new Date(), // <-- current time
-      },
+      data: { next_time: now },
     });
 
-    console.log("✅ Update result:", updated);
+    console.log("✅ Next time updated:", updated);
 
     return NextResponse.json(updated);
   } catch (error) {
     console.error("❌ Database update error:", error);
-    return NextResponse.json({ error: "Failed to update" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update next_time" }, { status: 500 });
   }
 }

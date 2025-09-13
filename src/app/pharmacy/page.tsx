@@ -42,9 +42,13 @@ export default function Home() {
     await fetch(`/api/counter/${id}`, { method: "PUT" });
     setCanNext(true); // enable Next button
   }
-
   async function handleNext() {
     setCanNext(false);
+
+    if (counter) {
+      await fetch(`/api/counter/next/${counter.id}`, { method: "PUT" });
+    }
+
     await fetchCounter(true); // silent fetch, no spinner
   }
 

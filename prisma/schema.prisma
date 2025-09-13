@@ -19,6 +19,8 @@ model counter_data {
   timestamp           DateTime? @default(now()) @db.Timestamp(6)
   Served              Boolean   @default(false)
   phar_id             Int       @default(0)
+  served_time         DateTime? @db.Timestamp(6)
+  next_time           DateTime? @db.Timestamp(6)
 }
 
 model metadata {

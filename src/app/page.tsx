@@ -160,6 +160,16 @@ export default function LandingPage() {
           >
             Pharmacy
           </button>
+          <button
+            onClick={() => router.push("/tokenmoniter")}
+            disabled={isDisabled}
+            className={`px-6 py-3 rounded-lg font-semibold transition ${isDisabled
+              ? "bg-green-300 cursor-not-allowed !text-white"
+              : "bg-green-500 hover:bg-green-600 !text-white"
+              }`}
+          >
+            Display
+          </button>
 
           <button
             onClick={() => router.push("/setup")}
@@ -167,6 +177,7 @@ export default function LandingPage() {
           >
             Setup
           </button>
+          
         </div>
       </div>
 
