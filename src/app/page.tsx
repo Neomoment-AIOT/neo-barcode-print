@@ -76,35 +76,35 @@ export default function LandingPage() {
       console.error(err);
     }
   }
-  useEffect(() => {
-    if (!deviceId || !pharmacyId) return;
+useEffect(() => {
+  if (!deviceId || !pharmacyId) return;
 
-    const deactivate = () => {
-      navigator.sendBeacon(
-        "/api/updateActiveCounter",
-        JSON.stringify({
-          device_id: deviceId,
-          phar_id: pharmacyId,
-          status: false,
-        })
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch(
+        `/api/getCounterStatus?device_id=${deviceId}&phar_id=${pharmacyId}`
       );
-    };
-
-    // Works on desktop
-    window.addEventListener("beforeunload", deactivate);
-
-    // Works on mobile
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden") {
-        deactivate();
+      const data = await res.json();
+      if (data.success) {
+        setIsCounter(data.status); // 👈 sync UI with DB
       }
-    });
+    } catch (err) {
+      console.error("Failed to fetch counter status", err);
+    }
+  };
 
-    return () => {
-      window.removeEventListener("beforeunload", deactivate);
-      document.removeEventListener("visibilitychange", deactivate);
-    };
-  }, [deviceId, pharmacyId]);
+  // Run when tab is focused again
+  const handleFocus = () => fetchStatus();
+
+  window.addEventListener("focus", handleFocus);
+
+  // Also check once when mounted
+  fetchStatus();
+
+  return () => {
+    window.removeEventListener("focus", handleFocus);
+  };
+}, [deviceId, pharmacyId]);
 
 
   async function updateCounterState(newState: boolean) {
