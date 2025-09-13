@@ -36,32 +36,32 @@ export default function TokenMonitorPage() {
 
   return (
     <div className="flex flex-col items-start justify-center min-h-screen bg-black space-y-8">
-      <div className="text-8xl font-bold !text-white mx-4">
+      <div className="text-7xl font-bold !text-white mx-4">
         Last Token:{" "}
         <span className="!text-red-400 inline-block break-words max-w-[90vw]">
           {data.lastServed ? data.lastServed.counter : "—"}
         </span>
       </div>
-      <div className="text-8xl font-bold !text-white mx-4">
+      <div className="text-9xl font-bold !text-white mx-4">
         Current Token:{" "}
         <span className="!text-yellow-400 inline-block break-words max-w-[90vw]">
           {data.currentUnserved ? data.currentUnserved.counter : "—"}
         </span>
       </div>
-      <div className="text-8xl font-bold !text-white mx-4">
+      <div className="text-7xl font-bold !text-white mx-4">
         Next Token:{" "}
         <span className="!text-blue-400 inline-block break-words max-w-[90vw]">
           {data.nextUnserved ? data.nextUnserved.counter : "—"}
         </span>
       </div>
-      <div className="text-8xl font-bold !text-white mx-4">
+      <div className="text-7xl font-bold !text-white mx-4">
         Avg Serve Time:{" "}
         <span className="!text-green-400 inline-block break-words max-w-[90vw]">
           {formatAvgTime(data.avgServeTime)}
         </span>
       </div>
-      <div className="text-8xl font-bold !text-white mx-4">
-        Avg Counter:{" "}
+      <div className="text-7xl font-bold !text-white mx-4">
+        Avg Counter Time:{" "}
         <span className="!text-purple-400 inline-block break-words max-w-[90vw]">
           {formatAvgTime(data.avgNextGap)}
         </span>
