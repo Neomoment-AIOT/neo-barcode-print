@@ -37,19 +37,19 @@ export default function TokenMonitorPage() {
   return (
     <div className="flex flex-col items-start justify-center min-h-screen bg-black space-y-8">
       <div className="text-8xl font-bold !text-white mx-4">
-        Last Served Token:{" "}
+        Last Token:{" "}
         <span className="!text-red-400 inline-block break-words max-w-[90vw]">
           {data.lastServed ? data.lastServed.counter : "—"}
         </span>
       </div>
       <div className="text-8xl font-bold !text-white mx-4">
-        Current Unserved Token:{" "}
+        Current Token:{" "}
         <span className="!text-yellow-400 inline-block break-words max-w-[90vw]">
           {data.currentUnserved ? data.currentUnserved.counter : "—"}
         </span>
       </div>
       <div className="text-8xl font-bold !text-white mx-4">
-        Next Unserved Token:{" "}
+        Next Token:{" "}
         <span className="!text-blue-400 inline-block break-words max-w-[90vw]">
           {data.nextUnserved ? data.nextUnserved.counter : "—"}
         </span>
@@ -61,7 +61,7 @@ export default function TokenMonitorPage() {
         </span>
       </div>
       <div className="text-8xl font-bold !text-white mx-4">
-        Avg Next Gap:{" "}
+        Avg Counter:{" "}
         <span className="!text-purple-400 inline-block break-words max-w-[90vw]">
           {formatAvgTime(data.avgNextGap)}
         </span>
