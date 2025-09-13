@@ -1,11 +1,19 @@
 "use client";
 import { useEffect, useState } from "react";
 
+interface TokenData {
+  lastServed?: { counter: string };
+  currentUnserved?: { counter: string };
+  nextUnserved?: { counter: string };
+  avgServeTime?: number | null;
+  avgNextGap?: number | null;
+}
+
 export default function TokenMonitorPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<TokenData | null>(null);
 
   // 🕒 Format time
-  const formatAvgTime = (seconds: number | null) => {
+  const formatAvgTime = (seconds: number | null | undefined) => {
     if (seconds == null) return "—";
     if (seconds < 60) return `${Math.round(seconds)} sec`;
     const mins = Math.floor(seconds / 60);
@@ -15,7 +23,7 @@ export default function TokenMonitorPage() {
   useEffect(() => {
     const fetchData = async () => {
       const res = await fetch("/api/token-monitor");
-      const json = await res.json();
+      const json: TokenData = await res.json();
       setData(json);
       console.log("🔍 Debug API Response:", json);
     };
