@@ -76,35 +76,35 @@ export default function LandingPage() {
       console.error(err);
     }
   }
-useEffect(() => {
-  if (!deviceId || !pharmacyId) return;
+  useEffect(() => {
+    if (!deviceId || !pharmacyId) return;
 
-  const fetchStatus = async () => {
-    try {
-      const res = await fetch(
-        `/api/getCounterStatus?device_id=${deviceId}&phar_id=${pharmacyId}`
-      );
-      const data = await res.json();
-      if (data.success) {
-        setIsCounter(data.status); // 👈 sync UI with DB
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch(
+          `/api/getCounterStatus?device_id=${deviceId}&phar_id=${pharmacyId}`
+        );
+        const data = await res.json();
+        if (data.success) {
+          setIsCounter(data.status); // 👈 sync UI with DB
+        }
+      } catch (err) {
+        console.error("Failed to fetch counter status", err);
       }
-    } catch (err) {
-      console.error("Failed to fetch counter status", err);
-    }
-  };
+    };
 
-  // Run when tab is focused again
-  const handleFocus = () => fetchStatus();
+    // Run when tab is focused again
+    const handleFocus = () => fetchStatus();
 
-  window.addEventListener("focus", handleFocus);
+    window.addEventListener("focus", handleFocus);
 
-  // Also check once when mounted
-  fetchStatus();
+    // Also check once when mounted
+    fetchStatus();
 
-  return () => {
-    window.removeEventListener("focus", handleFocus);
-  };
-}, [deviceId, pharmacyId]);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [deviceId, pharmacyId]);
 
 
   async function updateCounterState(newState: boolean) {
@@ -150,31 +150,31 @@ useEffect(() => {
     <div className="relative flex h-screen items-center justify-center bg-gray-100">
       {/* ✅ Top-center pharmacy name */}
       {/* ✅ Responsive top bar */}
-<div className="absolute top-4 left-0 right-0 px-4 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
-  {/* Pharmacy name */}
-  <div className="px-3 py-2 bg-gray-800 !text-white rounded-lg font-semibold shadow-md text-center sm:text-left w-full sm:w-auto">
-    {pharmacyName || "No pharmacy selected"}
-  </div>
+      <div className="absolute top-4 left-0 right-0 px-4 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
+        {/* Pharmacy name */}
+        <div className="px-3 py-2 bg-gray-800 !text-white rounded-lg font-semibold shadow-md text-center sm:text-left w-full sm:w-auto">
+          {pharmacyName || "No pharmacy selected"}
+        </div>
 
-  {/* Counter toggle */}
-  {pharmacyId && (
-    <div className="flex items-center space-x-2">
-      <span className="text-gray-800 font-semibold text-sm sm:text-base">
-        {isCounter ? "Counter" : "Not Counter"}
-      </span>
-      <label className="relative inline-flex items-center cursor-pointer">
-        <input
-          type="checkbox"
-          checked={isCounter}
-          onChange={handleToggle}
-          className="sr-only peer"
-        />
-        <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-6"></div>
-      </label>
-    </div>
-  )}
-</div>
+        {/* Counter toggle */}
+        {pharmacyId && (
+          <div className="flex items-center space-x-2">
+            <span className="text-gray-800 font-semibold text-sm sm:text-base">
+              {isCounter ? "Counter" : "Not Counter"}
+            </span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isCounter}
+                onChange={handleToggle}
+                className="sr-only peer"
+              />
+              <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+              <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-6"></div>
+            </label>
+          </div>
+        )}
+      </div>
 
       <div className="bg-white p-8 rounded-2xl shadow-lg text-center w-96">
         <div className="flex justify-center mb-6">
