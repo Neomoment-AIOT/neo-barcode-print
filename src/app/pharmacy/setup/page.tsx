@@ -254,7 +254,14 @@ export default function PharmacyRegister() {
               onChange={handleChange}
               className="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-           
+            <input
+              type="number"
+              name="number_of_counters"
+              placeholder="Number of Counters"
+              value={formData.number_of_counters}
+              onChange={handleChange}
+              className="border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
 
             <label className="flex items-center gap-2">
               <input

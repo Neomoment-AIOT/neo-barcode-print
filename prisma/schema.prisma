@@ -61,3 +61,10 @@ model counter_devices {
   status        Boolean?  @default(true)
   pharmacy      pharmacy  @relation(fields: [phar_id], references: [phar_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pharmacy")
 }
+
+model users {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique @db.VarChar(100)
+  password  String    @db.VarChar(255)
+  createdat DateTime? @default(now()) @db.Timestamp(6)
+}
