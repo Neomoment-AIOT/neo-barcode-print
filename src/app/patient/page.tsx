@@ -546,7 +546,7 @@ export default function PatientPage() {
 
             {/* Back Button */}
             <button
-                onClick={() => (window.location.href = "/landing")}
+                onClick={() => (window.location.href = "/")}
                 className="absolute top-4 left-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition"
             >
                 ⬅ Back
