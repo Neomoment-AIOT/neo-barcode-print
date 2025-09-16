@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast, Toaster } from "react-hot-toast";
 
+import { useRouter } from "next/navigation";
 interface Pharmacy {
   id: number;
   phar_id: number;
@@ -15,7 +16,13 @@ export default function PharmacySelector() {
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState<Pharmacy | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-
+ const router = useRouter();
+  useEffect(() => {
+    const username = localStorage.getItem("username");
+    if (!username) {
+      router.push("/"); // go back to login
+    }
+  }, [router]);
   // Fetch pharmacies from API
   useEffect(() => {
     async function fetchPharmacies() {

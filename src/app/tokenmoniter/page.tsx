@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
+import { useRouter } from "next/navigation";
 interface TokenData {
   lastServed?: { counter: string };
   currentUnserved?: { counter: string };
@@ -65,7 +66,13 @@ export default function TokenMonitorPage() {
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
-
+ const router = useRouter();
+  useEffect(() => {
+    const username = localStorage.getItem("username");
+    if (!username) {
+      router.push("/"); // go back to login
+    }
+  }, [router]);
 
   // 🔔 Speak every 2s in selected language
   useEffect(() => {

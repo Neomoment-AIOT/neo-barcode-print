@@ -12,7 +12,12 @@ export default function LandingPage() {
   const [isCounter, setIsCounter] = useState(false); // ✅ toggle state
   const deviceId = useDeviceId();
   const router = useRouter();
-
+  useEffect(() => {
+    const username = localStorage.getItem("username");
+    if (!username) {
+      router.push("/"); // go back to login
+    }
+  }, [router]);
   // Clock
   useEffect(() => {
     const updateTime = () => {

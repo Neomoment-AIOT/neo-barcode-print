@@ -21,7 +21,13 @@ export default function Home() {
   const [isInitialLoading, setIsInitialLoading] = useState(true); // for page load
   const [isFetching, setIsFetching] = useState(false); // silent fetch
   const [time, setTime] = useState("");
-
+  const router = useRouter();
+  useEffect(() => {
+    const username = localStorage.getItem("username");
+    if (!username) {
+      router.push("/"); // go back to login
+    }
+  }, [router]);
   useEffect(() => {
     function updateTime() {
       const now = new Date();
@@ -37,7 +43,7 @@ export default function Home() {
   }, []);
 
   const today = new Date().toLocaleDateString(); // e.g., "9/9/2025"
-  const router = useRouter();
+ 
   async function markServed(id: number) {
     await fetch(`/api/counter/${id}`, { method: "PUT" });
     setCanNext(true); // enable Next button

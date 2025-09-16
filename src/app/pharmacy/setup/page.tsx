@@ -5,6 +5,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { useDeviceId } from "../../../utils/useDeviceId";
 
 
+import { useRouter } from "next/navigation";
 interface Pharmacy {
   id: number;
   phar_id: string;
@@ -32,7 +33,13 @@ export default function PharmacyRegister() {
     functional: false,
     number_of_counters: "" as string | number,  // 👈 empty by default
   });
-
+  const router = useRouter();
+  useEffect(() => {
+    const username = localStorage.getItem("username");
+    if (!username) {
+      router.push("/"); // go back to login
+    }
+  }, [router]);
 
   // Clock
   useEffect(() => {

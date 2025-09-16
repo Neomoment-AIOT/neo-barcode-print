@@ -4,6 +4,7 @@ import Image from "next/image";
 import JsBarcode from "jsbarcode";
 import { jsPDF } from "jspdf";
 
+import { useRouter } from "next/navigation";
 export default function PatientPage() {
     const [time, setTime] = useState("");
     const [language, setLanguage] = useState<"en" | "ar">("en");
@@ -15,7 +16,13 @@ export default function PatientPage() {
     // Off-DOM SVG refs (we create SVG elements with createElementNS and never append them)
     const iqamaSvgRef = useRef<SVGElement | null>(null);
     const prescriptionSvgRef = useRef<SVGElement | null>(null);
-
+    const router = useRouter();
+    useEffect(() => {
+        const username = localStorage.getItem("username");
+        if (!username) {
+            router.push("/"); // go back to login
+        }
+    }, [router]);
 
     useEffect(() => {
         setIsClient(true);
