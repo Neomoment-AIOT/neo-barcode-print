@@ -148,7 +148,7 @@ export default function Home() {
 
       {/* Back button */}
       <button
-        onClick={() => router.push("/")}
+        onClick={() => router.push("/landing")}
         className="absolute top-4 left-4 px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 transition text-sm font-semibold"
       >
         {t.back}
