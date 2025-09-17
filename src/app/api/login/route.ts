@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
-import {prisma} from "@/app/lib/prisma";
+import {prisma} from "../../lib/prisma";
 
 export async function POST(req: Request) {
-  const { username, password } = await req.json();
+  let body;
+  try {
+    body = await req.json();
+  } catch (err) {
+    return NextResponse.json({ success: false, message: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const { username, password } = body;
+  if (!username || !password) {
+    return NextResponse.json({ success: false, message: "Missing fields" }, { status: 400 });
+  }
 
   const user = await prisma.users.findUnique({
     where: { username },
@@ -16,6 +26,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: "Wrong password" });
   }
 
-  // ✅ If login ok, return success
   return NextResponse.json({ success: true, username: user.username });
 }
